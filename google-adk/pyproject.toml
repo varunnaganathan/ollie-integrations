@@ -1,0 +1,71 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ollie-integrations-google-adk"
+version = "0.3.2"
+description = "Native Google ADK execution-graph integration for Ollie v2 ingest"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [
+    { name = "Ollie", email = "support@ollie.ai" },
+]
+keywords = ["ollie", "google-adk", "observability", "tracing", "agents"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "ollie-sdk>=0.1.0",
+]
+
+[project.optional-dependencies]
+agent = [
+    "google-adk>=1.17.0",
+    "google-genai>=1.0.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.23.0",
+    "python-dotenv>=1.0.0",
+    "python-dateutil>=2.8.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/varunnaganathan/ollie-integrations/tree/main/google-adk"
+Documentation = "https://github.com/varunnaganathan/ollie-integrations/blob/main/google-adk/docs/INSTRUMENTATION.md"
+Repository = "https://github.com/varunnaganathan/ollie-integrations"
+Issues = "https://github.com/varunnaganathan/ollie-integrations/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ollie_integrations_google_adk"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/README.md",
+    "/LICENSE",
+    "/docs",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "tests", "examples"]
+asyncio_mode = "auto"
+markers = [
+    "e2e: end-to-end tests with live ADK agent",
+    "adk: requires google-adk and model credentials",
+    "install: GitHub customer install in fresh temp venv (CI / manual)",
+    "integration: live ingest against running sdk_ingest",
+    "e2e_ingest: live ADK + real ingest HTTP + worker + Postgres",
+    "instrumentation: attach_ollie hook and flush tests",
+    "pypi: PyPI one-liner install in fresh temp venv (post-publish)",
+]
