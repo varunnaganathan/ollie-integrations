@@ -18,7 +18,7 @@ export OLLIE_API_KEY="..."
 export OLLIE_AGENT_ID="..."
 ```
 
-`create_ollie_client()` / `ollie.Client()` read these from the environment.
+Also set `OLLIE_BASE_URL` and `OLLIE_INGEST_BASE_URL` for production (defaults are localhost).
 
 ## Agent loop
 
@@ -34,23 +34,22 @@ Never mark done without a verified cloud trace.
 
 Onboarding check: `flush_mode="validate"` (or `OLLIE_FLUSH_MODE=validate`). Production: `flush_mode="ingest"`.
 
-**Before optional enrichment** (custom attributes, signals, multi-agent notes, troubleshooting): fetch the package docs at the **pin tag** (URLs below). Do not invent APIs from memory.
+**Before enrichment** (custom attributes, signals, multi-agent notes, troubleshooting): fetch the framework **INSTRUMENTATION.md** at the pin URL below. Do not invent APIs from memory.
 
 ## Current pins
 
-| Package | Tag / pin |
-|---------|-----------|
-| ollie-sdk (Python + TS) | `v0.3.1` |
-| Google ADK | `google-adk-v0.3.3` |
-| OpenAI Agents (Python) | `openai-agents-v0.2.2` |
-| OpenAI Agents (TypeScript) | `openai-agents-ts-v0.2.1` |
+| Framework | Install pin(s) | Docs (one per framework) |
+|-----------|----------------|--------------------------|
+| ollie-sdk (custom Py/TS) | `v0.3.2` | [INSTRUMENTATION.md](https://raw.githubusercontent.com/varunnaganathan/ollie-sdk/v0.3.2/docs/INSTRUMENTATION.md) |
+| Google ADK | `google-adk-v0.3.3` | [INSTRUMENTATION.md](https://raw.githubusercontent.com/varunnaganathan/ollie-integrations/google-adk-v0.3.3/google-adk/docs/INSTRUMENTATION.md) |
+| OpenAI Agents | Py `openai-agents-v0.2.3` · TS `openai-agents-ts-v0.2.2` | [INSTRUMENTATION.md](https://raw.githubusercontent.com/varunnaganathan/ollie-integrations/openai-agents-v0.2.3/openai-agents/docs/INSTRUMENTATION.md) (identical file under `openai-agents-ts` at the TS tag) |
 
 ## Google ADK
 
 Detect: `google.adk`, `LlmAgent`, `Runner.run_async` / `Runner.run`.
 
 ```bash
-pip install "ollie-sdk @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.1"
+pip install "ollie-sdk @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.2"
 pip install "ollie-integrations-google-adk[agent] @ git+https://github.com/varunnaganathan/ollie-integrations.git@google-adk-v0.3.3#subdirectory=google-adk"
 ```
 
@@ -67,21 +66,20 @@ attach_ollie(
     flush_mode=os.getenv("OLLIE_FLUSH_MODE", "ingest"),
 )
 # Once at startup, before first Runner.run / run_async.
-# Keep create_session → run / run_async. Do not wrap Runner yourself.
 ```
 
-**Docs (required for anything beyond attach):**  
-https://raw.githubusercontent.com/varunnaganathan/ollie-integrations/google-adk-v0.3.3/google-adk/docs/INSTRUMENTATION.md
+**Docs:** https://raw.githubusercontent.com/varunnaganathan/ollie-integrations/google-adk-v0.3.3/google-adk/docs/INSTRUMENTATION.md  
+(Version capabilities and enrichment — fetch the doc.)
 
-Capability pointers (details in docs): run attrs via `add_interaction_attributes`; span attrs on **0.3.3+** via `add_span_attributes`.
+## OpenAI Agents
 
-## OpenAI Agents (Python)
+Detect: `agents.Agent` / `@openai/agents`, `Runner.run` / `run_sync`.
 
-Detect: `agents.Agent`, `Runner.run` / `run_sync`, `openai-agents` (Python).
+**Python install:**
 
 ```bash
-pip install "ollie-sdk @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.1"
-pip install "ollie-integrations-openai-agents[agent] @ git+https://github.com/varunnaganathan/ollie-integrations.git@openai-agents-v0.2.2#subdirectory=openai-agents"
+pip install "ollie-sdk @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.2"
+pip install "ollie-integrations-openai-agents[agent] @ git+https://github.com/varunnaganathan/ollie-integrations.git@openai-agents-v0.2.3#subdirectory=openai-agents"
 ```
 
 ```python
@@ -94,81 +92,57 @@ attach_ollie(
     workflow_name="my_openai_agent",
     flush_mode=os.getenv("OLLIE_FLUSH_MODE", "ingest"),
 )
-# Once at startup, before Runner.run / run_sync. Keep real Runner path.
-```
-
-**Docs (required for anything beyond attach):**  
-https://raw.githubusercontent.com/varunnaganathan/ollie-integrations/openai-agents-v0.2.2/openai-agents/docs/INSTRUMENTATION.md
-
-Capability pointers (details in docs): run + span attrs on **0.2.2+** (`add_interaction_attributes`, `add_span_attributes`).
-
-## OpenAI Agents (TypeScript)
-
-Detect: `@openai/agents`, `Agent`, `Runner.run` in TypeScript/Node.
-
-```bash
-npm install @openai/agents
-npm install "github:varunnaganathan/ollie-integrations#openai-agents-ts-v0.2.1:openai-agents-ts"
-npm install "github:varunnaganathan/ollie-sdk#v0.3.1:packages/ts"
-```
-
-Wire-format package: populate `RunCollector` from your processor / run wrapper (each span needs `span_ref`), then `collectorToWirePayload` / `flushCollectorToClient`.
-
-```ts
-import {
-  RunCollector,
-  addInteractionAttributes,
-  addSpanAttributes,
-  emitSignal,
-  collectorToWirePayload,
-} from "@ollie/integrations-openai-agents";
-
-const collector = new RunCollector({ workflowName: "my_openai_agent", inputText: userMsg });
-RunCollector.runWith(collector, () => {
-  addInteractionAttributes({ user_tier: "pro" });
-  // pushOpenSpan → addSpanAttributes / emitSignal → addSpan → popOpenSpan → close
-});
-const wire = collectorToWirePayload(collector, process.env.OLLIE_AGENT_ID!);
-```
-
-**Docs (required for anything beyond the stub):**  
-https://raw.githubusercontent.com/varunnaganathan/ollie-integrations/openai-agents-ts-v0.2.1/openai-agents-ts/docs/INSTRUMENTATION.md
-
-Capability pointers on **0.2.1+**: `addInteractionAttributes`, `addSpanAttributes`, `emitSignal`.
-
-## Custom Python / TypeScript (ollie-sdk)
-
-Detect: direct OpenAI/Anthropic/Gemini calls, or manual `client.workflow` / `ollie.tool` (no agent framework).
-
-**Python install:**
-
-```bash
-pip install "ollie-sdk[tracing] @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.1"
+# Once at startup, before Runner.run / run_sync.
 ```
 
 **TypeScript install:**
 
 ```bash
-npm install "github:varunnaganathan/ollie-sdk#v0.3.1:packages/ts"
+npm install @openai/agents
+npm install "github:varunnaganathan/ollie-integrations#openai-agents-ts-v0.2.2:openai-agents-ts"
+npm install "github:varunnaganathan/ollie-sdk#v0.3.2:packages/ts"
 ```
 
-Minimal Python stub:
+```ts
+import { RunCollector, collectorToWirePayload } from "@ollie/integrations-openai-agents";
+// Populate RunCollector from your processor; see docs for attrs / emitSignal / flush.
+```
+
+**Docs (Python + TypeScript in one file):**  
+https://raw.githubusercontent.com/varunnaganathan/ollie-integrations/openai-agents-v0.2.3/openai-agents/docs/INSTRUMENTATION.md
+
+## Custom Python / TypeScript (ollie-sdk)
+
+Detect: direct OpenAI/Anthropic/Gemini calls, or manual `client.workflow` / `tool` (no agent framework).
+
+**Python:**
+
+```bash
+pip install "ollie-sdk[tracing] @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.2"
+```
 
 ```python
 import ollie
 
-client = ollie.init(tracing=True)  # or Client() + workflow only
+client = ollie.init(tracing=True)
 with client.workflow(name="my_app", input=user_msg) as wf:
-    # LLM calls auto-captured when tracing=True; custom tools via ollie.tool
+    # LLM auto-captured when tracing=True; custom tools via ollie.tool
     wf.output = "..."
 # Persist: wf.flush_ingest()
 ```
 
-**Docs (required for enrichment):**  
-https://raw.githubusercontent.com/varunnaganathan/ollie-sdk/v0.3.1/docs/CLIENT_ONBOARDING.md
+**TypeScript:**
 
-Capability pointers on **v0.3.1+** (details in docs):
+```bash
+npm install "github:varunnaganathan/ollie-sdk#v0.3.2:packages/ts"
+# plus OTEL peers — see docs
+```
 
-- Interaction attrs: `ix.attribute` / `define_feature`
-- Span props: `span_attribute` / `spanAttribute`
-- Emit signals on a run: `signal` / `emit_signal` (`define_signal` = catalog only)
+```ts
+import { initAsync, Instruments } from "@ollie/sdk";
+const client = await initAsync({ tracing: true, instruments: new Set([Instruments.OPENAI]) });
+// workflow + tool + flushIngest — see docs (init BEFORE dynamic import of openai)
+```
+
+**Docs (Python + TypeScript in one file):**  
+https://raw.githubusercontent.com/varunnaganathan/ollie-sdk/v0.3.2/docs/INSTRUMENTATION.md

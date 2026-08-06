@@ -20,6 +20,32 @@ def normalize_collector(collector: RunCollector) -> dict[str, Any]:
         latency_ms=collector.latency_ms,
         interaction_ref="ix_0",
     )
+    # Union auto + user emits (dedupe by signal|kind|anchor).
+    pending = list(signal_hits)
+    seen = {
+        (
+            str(h.get("signal") or ""),
+            str(h.get("kind") or ""),
+            str(h.get("anchor_kind") or ""),
+            str(h.get("anchor_id") or ""),
+        )
+        for h in pending
+        if isinstance(h, dict)
+    }
+    for h in collector.user_signal_hits:
+        if not isinstance(h, dict):
+            continue
+        key = (
+            str(h.get("signal") or ""),
+            str(h.get("kind") or ""),
+            str(h.get("anchor_kind") or ""),
+            str(h.get("anchor_id") or ""),
+        )
+        if not key[0] or key in seen:
+            continue
+        seen.add(key)
+        pending.append(h)
+
     attributes: list[dict[str, Any]] = [
         {"name": "latency_ms", "value": collector.latency_ms},
         {"name": "success", "value": success},
@@ -35,7 +61,7 @@ def normalize_collector(collector: RunCollector) -> dict[str, Any]:
         "input": collector.input_text,
         "output": collector.output_text,
         "events": events,
-        "_signal_hits": signal_hits,
+        "_signal_hits": pending,
         "attributes": attributes,
         "started_at": collector.started_at,
         "ended_at": collector.ended_at or collector.started_at,

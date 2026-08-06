@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ollie-integrations-openai-agents"
-version = "0.2.2"
+version = "0.2.3"
 description = "OpenAI Agents SDK integration for Ollie v2 ingest (single-run model)"
 readme = "README.md"
 license = { file = "LICENSE" }

@@ -3,6 +3,7 @@
 from ollie_integrations_openai_agents.attributes import (
     add_interaction_attributes,
     add_span_attributes,
+    emit_signal,
 )
 from ollie_integrations_openai_agents.collector import RunCollector
 from ollie_integrations_openai_agents.config import create_ollie_client
@@ -18,6 +19,7 @@ __all__ = [
     "OllieTracingProcessor",
     "add_interaction_attributes",
     "add_span_attributes",
+    "emit_signal",
     "attach_ollie",
     "collector_to_wire_payload",
     "create_ollie_client",

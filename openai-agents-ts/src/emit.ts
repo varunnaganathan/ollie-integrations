@@ -4,7 +4,7 @@ import { instrumentEvents } from "./signals.js";
 import type { SignalHit, WirePayload } from "./types.js";
 import { warehouseShapeSpans } from "./warehouseSpan.js";
 
-const VERSION = "0.2.1";
+const VERSION = "0.2.2";
 const MAX_WIRE_CHARS = 32_000;
 
 function truncate(text: string | null | undefined): [string, boolean] {

@@ -19,6 +19,31 @@ def build_single_tool_agent():
     )
 
 
+def build_capabilities_agent():
+    """Agent whose tool exercises all custom instrumentation APIs."""
+    from agents import Agent, function_tool
+    from ollie_integrations_openai_agents import (
+        add_interaction_attributes,
+        add_span_attributes,
+        emit_signal,
+    )
+
+    @function_tool
+    def get_weather(city: str) -> str:
+        """Return mock weather; also stamps Ollie attrs + signal."""
+        add_interaction_attributes({"user_tier": "pro", "request_id": "req-e2e-1"})
+        add_span_attributes({"vendor": "core_ledger", "retry_count": 0})
+        emit_signal("refund_requested", kind="context")
+        return f"It's 72°F and sunny in {city}."
+
+    return Agent(
+        name="weather_assistant_caps",
+        instructions="Always call get_weather for weather questions.",
+        tools=[get_weather],
+        model="gpt-4o-mini",
+    )
+
+
 def build_handoff_agents():
     from agents import Agent, function_tool
 

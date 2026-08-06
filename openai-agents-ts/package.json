@@ -1,6 +1,6 @@
 {
   "name": "@ollie/integrations-openai-agents",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "OpenAI Agents SDK integration for Ollie v2 ingest (single-run model)",
   "type": "module",
   "main": "dist/index.js",
@@ -21,5 +21,8 @@
     "@types/node": "^20.0.0",
     "vitest": "^2.0.0"
   },
-  "files": ["dist", "src"]
+  "files": [
+    "dist",
+    "src"
+  ]
 }

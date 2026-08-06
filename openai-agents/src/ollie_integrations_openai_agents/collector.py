@@ -45,6 +45,7 @@ class RunCollector:
     status: str = "completed"
     spans: list[dict[str, Any]] = field(default_factory=list)
     run_attributes: dict[str, Any] = field(default_factory=dict)
+    user_signal_hits: list[dict[str, Any]] = field(default_factory=list)
     _open_span_stack: list[str] = field(default_factory=list)
     _pending_span_attrs: dict[str, dict[str, Any]] = field(default_factory=dict)
     _started_mono: float = field(default_factory=time.monotonic)
@@ -99,6 +100,36 @@ class RunCollector:
             key = str(name or "").strip()
             if key:
                 bucket[key] = value
+
+    def append_signal_hit(
+        self,
+        name: str,
+        *,
+        kind: str = "context",
+        span_ref: str | None = None,
+    ) -> None:
+        sig = str(name or "").strip()
+        if not sig:
+            return
+        k = str(kind or "context").strip()
+        if k not in ("context", "trigger"):
+            k = "context"
+        sid = (span_ref or self.current_span_id() or "").strip()
+        if sid:
+            hit = {
+                "signal": sig,
+                "kind": k,
+                "anchor_kind": "span",
+                "anchor_id": sid,
+            }
+        else:
+            hit = {
+                "signal": sig,
+                "kind": k,
+                "anchor_kind": "interaction",
+                "anchor_id": "ix_0",
+            }
+        self.user_signal_hits.append(hit)
 
     def add_span(self, span: dict[str, Any]) -> None:
         out = dict(span)

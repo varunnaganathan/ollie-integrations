@@ -1,10 +1,12 @@
-"""Attach custom interaction / span attributes during an active OpenAI Agents run."""
+"""Attach custom interaction / span attributes and emit signals during an OA run."""
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from ollie_integrations_openai_agents.collector import RunCollector
+
+SignalKind = Literal["context", "trigger"]
 
 
 def add_interaction_attributes(attributes: dict[str, Any]) -> None:
@@ -31,3 +33,20 @@ def add_span_attributes(attributes: dict[str, Any]) -> None:
     if collector is None or not attributes:
         return
     collector.merge_pending_span_attributes(attributes)
+
+
+def emit_signal(
+    name: str,
+    *,
+    kind: SignalKind = "context",
+    span_ref: str | None = None,
+) -> None:
+    """Emit a signal hit on the active OpenAI Agents run (lands in ``_signal_hits``).
+
+    Optional: ``client.define_signal(...)`` once for catalog description.
+    Available in **0.2.3+**.
+    """
+    collector = RunCollector.current()
+    if collector is None:
+        return
+    collector.append_signal_hit(name, kind=kind, span_ref=span_ref)

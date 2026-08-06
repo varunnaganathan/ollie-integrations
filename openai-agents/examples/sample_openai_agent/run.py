@@ -25,7 +25,11 @@ for _env in (_PKG.parent.parent / ".env", _PKG.parent.parent.parent / ".env"):
 if str(_PKG / "examples") not in sys.path:
     sys.path.insert(0, str(_PKG / "examples"))
 
-from sample_openai_agent.agents import build_handoff_agents, build_single_tool_agent  # noqa: E402
+from sample_openai_agent.agents import (  # noqa: E402
+    build_capabilities_agent,
+    build_handoff_agents,
+    build_single_tool_agent,
+)
 
 
 def _mock_client() -> Any:
@@ -59,6 +63,9 @@ async def run_once(
     if mode == "single_agent_tool":
         agent = build_single_tool_agent()
         await Runner.run(agent, "What's the weather in NYC?")
+    elif mode == "capabilities":
+        agent = build_capabilities_agent()
+        await Runner.run(agent, "What's the weather in NYC?")
     elif mode == "multi_agent_handoff":
         triage, _billing = build_handoff_agents()
         await Runner.run(triage, "I need a refund for order 4821")
@@ -77,7 +84,11 @@ async def _run(mode: str, *, flush_mode: str = "validate") -> dict[str, Any]:
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("--mode", choices=("single_agent_tool", "multi_agent_handoff"), default="single_agent_tool")
+    p.add_argument(
+        "--mode",
+        choices=("single_agent_tool", "capabilities", "multi_agent_handoff"),
+        default="single_agent_tool",
+    )
     p.add_argument("--flush-mode", default="validate", choices=("validate", "process", "ingest"))
     p.add_argument("--live", action="store_true", help="Use real Ollie client (OLLIE_* env)")
     args = p.parse_args()
