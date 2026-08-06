@@ -38,7 +38,7 @@ Onboarding check: `flush_mode="validate"` (or `OLLIE_FLUSH_MODE=validate`). Prod
 
 | Framework | Install pin(s) | Docs (one per framework) |
 |-----------|----------------|--------------------------|
-| ollie-sdk (custom Py/TS) | `v0.3.2` | [INSTRUMENTATION.md](https://raw.githubusercontent.com/varunnaganathan/ollie-sdk/v0.3.2/docs/INSTRUMENTATION.md) |
+| ollie-sdk (custom Py/TS) | `v0.3.3` | [INSTRUMENTATION.md](https://raw.githubusercontent.com/varunnaganathan/ollie-sdk/v0.3.3/docs/INSTRUMENTATION.md) |
 | Google ADK | `google-adk-v0.3.3` | [INSTRUMENTATION.md](https://raw.githubusercontent.com/varunnaganathan/ollie-integrations/google-adk-v0.3.3/google-adk/docs/INSTRUMENTATION.md) |
 | OpenAI Agents | Py `openai-agents-v0.2.3` · TS `openai-agents-ts-v0.2.2` | [INSTRUMENTATION.md](https://raw.githubusercontent.com/varunnaganathan/ollie-integrations/openai-agents-v0.2.3/openai-agents/docs/INSTRUMENTATION.md) (identical file under `openai-agents-ts` at the TS tag) |
 
@@ -47,7 +47,7 @@ Onboarding check: `flush_mode="validate"` (or `OLLIE_FLUSH_MODE=validate`). Prod
 Detect: `google.adk`, `LlmAgent`, `Runner.run_async` / `Runner.run`.
 
 ```bash
-pip install "ollie-sdk @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.2"
+pip install "ollie-sdk @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.3"
 pip install "ollie-integrations-google-adk[agent] @ git+https://github.com/varunnaganathan/ollie-integrations.git@google-adk-v0.3.3#subdirectory=google-adk"
 ```
 
@@ -76,7 +76,7 @@ Detect: `agents.Agent` / `@openai/agents`, `Runner.run` / `run_sync`.
 **Python install:**
 
 ```bash
-pip install "ollie-sdk @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.2"
+pip install "ollie-sdk @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.3"
 pip install "ollie-integrations-openai-agents[agent] @ git+https://github.com/varunnaganathan/ollie-integrations.git@openai-agents-v0.2.3#subdirectory=openai-agents"
 ```
 
@@ -98,7 +98,7 @@ attach_ollie(
 ```bash
 npm install @openai/agents
 npm install "github:varunnaganathan/ollie-integrations#openai-agents-ts-v0.2.2:openai-agents-ts"
-npm install "github:varunnaganathan/ollie-sdk#v0.3.2:packages/ts"
+npm install "github:varunnaganathan/ollie-sdk#v0.3.3:packages/ts"
 ```
 
 ```ts
@@ -118,7 +118,7 @@ Detect: direct OpenAI / Anthropic / Gemini SDK calls, or manual `client.workflow
 **Python:**
 
 ```bash
-pip install "ollie-sdk[tracing] @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.2"
+pip install "ollie-sdk[tracing] @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.3"
 # Provider SDKs the app already uses (only those needed to run):
 # pip install openai anthropic google-genai
 ```
@@ -138,7 +138,7 @@ wf.flush_ingest()
 **TypeScript:**
 
 ```bash
-npm install "github:varunnaganathan/ollie-sdk#v0.3.2:packages/ts"
+npm install "github:varunnaganathan/ollie-sdk#v0.3.3:packages/ts"
 npm install @opentelemetry/api @opentelemetry/instrumentation \
   @opentelemetry/resources @opentelemetry/sdk-trace-node \
   @opentelemetry/instrumentation-openai \
@@ -168,4 +168,4 @@ await client.shutdown();
 ```
 
 **Docs (Python + TypeScript in one file):**  
-https://raw.githubusercontent.com/varunnaganathan/ollie-sdk/v0.3.2/docs/INSTRUMENTATION.md
+https://raw.githubusercontent.com/varunnaganathan/ollie-sdk/v0.3.3/docs/INSTRUMENTATION.md
