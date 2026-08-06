@@ -11,28 +11,26 @@ Use when onboarding with Ollie or adding tracing. This skill **routes**; it does
 
 ## Required environment
 
-Do **not** invent credentials. Use onboarding / `.ollie/env.sh` / the customer.
+Do **not** invent credentials. Use onboarding / `.ollie/env.sh` / the customer-provided `OLLIE_API_KEY` and `OLLIE_AGENT_ID`.
 
 ```bash
 export OLLIE_API_KEY="..."
 export OLLIE_AGENT_ID="..."
 ```
 
-Also set `OLLIE_BASE_URL` and `OLLIE_INGEST_BASE_URL` for production (defaults are localhost).
-
 ## Agent loop
 
 ```text
 1. Confirm OLLIE_API_KEY + OLLIE_AGENT_ID in the same env that runs the app
 2. Detect stack → install the pin from the table below
-3. Apply the smallest attach stub
-4. Run one representative invocation
+3. Apply the smallest attach stub (custom SDK: tracing=true, all LLM providers)
+4. Run one representative invocation with flush/ingest
 5. Confirm cloud diagnose / dashboard shows a trace for that agent_id
 ```
 
 Never mark done without a verified cloud trace.
 
-Onboarding check: `flush_mode="validate"` (or `OLLIE_FLUSH_MODE=validate`). Production: `flush_mode="ingest"`.
+Onboarding check: `flush_mode="validate"` (or `OLLIE_FLUSH_MODE=validate`). Production: `flush_mode="ingest"` / `flushIngest`.
 
 **Before enrichment** (custom attributes, signals, multi-agent notes, troubleshooting): fetch the framework **INSTRUMENTATION.md** at the pin URL below. Do not invent APIs from memory.
 
@@ -113,35 +111,60 @@ https://raw.githubusercontent.com/varunnaganathan/ollie-integrations/openai-agen
 
 ## Custom Python / TypeScript (ollie-sdk)
 
-Detect: direct OpenAI/Anthropic/Gemini calls, or manual `client.workflow` / `tool` (no agent framework).
+Detect: direct OpenAI / Anthropic / Gemini SDK calls, or manual `client.workflow` / `tool` (no agent framework).
+
+**Default onboarding:** always call `init` / `initAsync` with **`tracing=True` / `tracing: true`**. Do **not** pass a narrow `instruments` allowlist unless the customer asks — with the default, **OpenAI, Anthropic, and Gemini** client calls are all auto-captured as LLM / generation spans (OTEL). Install tracing peers for the languages in use. Custom non-LLM tools still need `ollie.tool` / `tool()`. Persist with `flush_ingest` / `flushIngest`.
 
 **Python:**
 
 ```bash
 pip install "ollie-sdk[tracing] @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.2"
+# Provider SDKs the app already uses (only those needed to run):
+# pip install openai anthropic google-genai
 ```
 
 ```python
 import ollie
 
+# tracing=True → auto-instrument OpenAI + Anthropic + Gemini (all installed providers)
 client = ollie.init(tracing=True)
 with client.workflow(name="my_app", input=user_msg) as wf:
-    # LLM auto-captured when tracing=True; custom tools via ollie.tool
+    # LLM SDK calls inside this workflow are captured automatically
+    # Custom tools: with ollie.tool("name", input=...) as t: t.output = "..."
     wf.output = "..."
-# Persist: wf.flush_ingest()
+wf.flush_ingest()
 ```
 
 **TypeScript:**
 
 ```bash
 npm install "github:varunnaganathan/ollie-sdk#v0.3.2:packages/ts"
-# plus OTEL peers — see docs
+npm install @opentelemetry/api @opentelemetry/instrumentation \
+  @opentelemetry/resources @opentelemetry/sdk-trace-node \
+  @opentelemetry/instrumentation-openai \
+  @traceloop/instrumentation-anthropic
+# Provider SDKs the app uses, e.g. openai / @anthropic-ai/sdk / @google/genai
 ```
 
 ```ts
-import { initAsync, Instruments } from "@ollie/sdk";
-const client = await initAsync({ tracing: true, instruments: new Set([Instruments.OPENAI]) });
-// workflow + tool + flushIngest — see docs (init BEFORE dynamic import of openai)
+import { initAsync, tool } from "@ollie/sdk";
+
+// tracing: true, no instruments allowlist → OpenAI + Anthropic + Gemini
+// Must run BEFORE dynamic import() of provider SDKs
+const client = await initAsync({ tracing: true });
+
+const { default: OpenAI } = await import("openai");
+// ... app LLM calls inside a workflow ...
+const wf = client.workflow({ name: "my_app", input: userMsg });
+wf.enter();
+try {
+  // LLM calls auto-captured; custom tools via tool()
+  wf.output = "...";
+} finally {
+  wf.exit();
+}
+await wf.flushIngest();
+await client.shutdown();
 ```
 
 **Docs (Python + TypeScript in one file):**  
