@@ -1,4 +1,4 @@
-# ADK execution model → Ollie warehouse (v0.3.2+)
+# ADK execution model → Ollie warehouse (v0.3.3+)
 
 The integration captures an **internal span tree** from Google ADK hooks, then **normalizes** it to a warehouse-shaped package: one run interaction, `trace_spans`-ready span dicts, and anchored `_signal_hits`.
 
@@ -83,12 +83,12 @@ Dropped neutrals: `used_tool`, `delegation`, `planner_uncertainty`, `input_trunc
 
 ## Migration from v0.2.x / v0.3.0
 
-v0.3.0 was a **breaking wire interior** change (same attach API). v0.3.1 added token splits, llm error messages, agent/run metadata, and sync `Runner.run`. v0.3.2 forwards ADK 2.6+ telemetry kwargs (`invocation_context` on tool hooks).
+v0.3.0 was a **breaking wire interior** change (same attach API). v0.3.1 added token splits, llm error messages, agent/run metadata, and sync `Runner.run`. v0.3.2 forwards ADK 2.6+ telemetry kwargs (`invocation_context` on tool hooks). v0.3.3 adds `add_span_attributes` and forwards custom node attributes onto span `properties` (non-breaking).
 
 - Query instrumented defaults via `signal_hits`, not `content.events[].name`
 - Span metrics and I/O live on `trace_spans` (`input`/`output`/`properties`)
 
-Install: `@google-adk-v0.3.2`
+Install: `@google-adk-v0.3.3`
 
 ## Phase 2 (future — not in this release)
 

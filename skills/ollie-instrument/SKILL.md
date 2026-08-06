@@ -38,7 +38,7 @@ Onboarding with local instrument check: `flush_mode="validate"` (or `OLLIE_FLUSH
 
 ```bash
 pip install "ollie-sdk @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.0"
-pip install "ollie-integrations-google-adk[agent] @ git+https://github.com/varunnaganathan/ollie-integrations.git@google-adk-v0.3.2#subdirectory=google-adk"
+pip install "ollie-integrations-google-adk[agent] @ git+https://github.com/varunnaganathan/ollie-integrations.git@google-adk-v0.3.3#subdirectory=google-adk"
 ```
 
 Also need `GOOGLE_API_KEY` or `GEMINI_API_KEY` for the ADK agent (not sent to Ollie).
@@ -59,24 +59,33 @@ attach_ollie(
 
 #### Optional — custom run attributes (ADK)
 
-Attach product metadata (request id, plan tier, locale, …) onto the active **run** while `Runner.run` / `run_async` is in flight (tool body, callback, or middleware). Register non-built-in names once with `define_feature` before ingest.
+Attach product metadata onto the active **run** while `Runner.run` / `run_async` is in flight. Register non-built-in names once with `define_feature` before ingest.
 
 ```python
 from ollie_integrations_google_adk import add_interaction_attributes
 
-# Once at startup (after create_ollie_client), for each custom key:
 client.define_feature(
     "user_tier",
-    kind="observable",  # or "behavioral" / "attribution"
+    kind="observable",
     description="Customer plan tier at request time",
 )
 
-# Inside a tool / callback during an active run:
 add_interaction_attributes({"user_tier": "pro", "request_id": "req-1"})
-# Default target is interaction="run" (recommended). Prefer run-level over interaction="agent".
+# Default: interaction="run". Prefer run-level for product features.
 ```
 
-Auto-collected span properties (tokens, `author`, tool/LLM errors, etc.) need no extra calls. Details: `google-adk/docs/INSTRUMENTATION.md` in this repo.
+#### Optional — custom span attributes (ADK **0.3.3+**)
+
+If the installed package is **`google-adk-v0.3.3` or newer**, you can also attach metadata to the **current open span** (tool / llm / agent). No `define_feature` required — values land on span `properties`.
+
+```python
+from ollie_integrations_google_adk import add_span_attributes
+
+# Inside a tool body (while that tool span is open):
+add_span_attributes({"vendor": "core_ledger", "retry_count": 0})
+```
+
+On older pins (`<=0.3.2`), skip span-level calls; run-level `add_interaction_attributes` still works. Details: `google-adk/docs/INSTRUMENTATION.md`.
 
 ### OpenAI Agents
 

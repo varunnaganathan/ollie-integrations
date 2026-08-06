@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ollie-integrations-google-adk"
-version = "0.3.2"
+version = "0.3.3"
 description = "Native Google ADK execution-graph integration for Ollie v2 ingest"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -40,10 +40,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/varunnaganathan/ollie-integrations/tree/main/google-adk"
-Documentation = "https://github.com/varunnaganathan/ollie-integrations/blob/main/google-adk/docs/INSTRUMENTATION.md"
-Repository = "https://github.com/varunnaganathan/ollie-integrations"
-Issues = "https://github.com/varunnaganathan/ollie-integrations/issues"
+Homepage = "https://github.com/varunnaganathan/ollie_sentry_backend/tree/main/integrations/google-adk"
+Documentation = "https://github.com/varunnaganathan/ollie_sentry_backend/blob/main/integrations/google-adk/docs/INSTRUMENTATION.md"
+Repository = "https://github.com/varunnaganathan/ollie_sentry_backend"
+Issues = "https://github.com/varunnaganathan/ollie_sentry_backend/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ollie_integrations_google_adk"]

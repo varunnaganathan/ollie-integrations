@@ -25,12 +25,36 @@ _LLM_PROP_ATTRS = (
 )
 _AGENT_PROP_ATTRS = ("author", "agent_branch")
 
+# Built-in / structural keys — custom attrs must not overwrite these on properties.
+_RESERVED_PROP_KEYS = frozenset(
+    {
+        "kind",
+        "name",
+        "status",
+        "duration_ms",
+        "latency_ms",
+        "success",
+        *_LLM_PROP_ATTRS,
+        *_AGENT_PROP_ATTRS,
+        "error_type",
+    }
+)
+
 
 def _text_io_dict(text: str | None) -> dict[str, Any]:
     s = str(text or "").strip()
     if not s:
         return {}
     return {"text": s}
+
+
+def _merge_custom_span_properties(node: AdkExecutionNode, props: dict[str, Any]) -> None:
+    """Copy non-reserved node attributes into span properties (v0.3.3+)."""
+    for a in node.attributes:
+        key = str(a.get("name") or "").strip()
+        if not key or key in _RESERVED_PROP_KEYS or key in props:
+            continue
+        props[key] = a.get("value")
 
 
 def normalize_collector(collector: ExecutionSpanCollector) -> list[dict[str, Any]]:
@@ -98,6 +122,8 @@ def normalize_collector(collector: ExecutionSpanCollector) -> list[dict[str, Any
             err_type = attr_value(node, "error_type")
             if err_type is not None:
                 props["error_type"] = str(err_type)
+
+        _merge_custom_span_properties(node, props)
 
         span: dict[str, Any] = {
             "type": span_type,

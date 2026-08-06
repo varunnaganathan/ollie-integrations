@@ -1,6 +1,9 @@
 """Google ADK native integration for Ollie."""
 
-from ollie_integrations_google_adk.attributes import add_interaction_attributes
+from ollie_integrations_google_adk.attributes import (
+    add_interaction_attributes,
+    add_span_attributes,
+)
 from ollie_integrations_google_adk.collector import ExecutionSpanCollector
 from ollie_integrations_google_adk.config import (
     DEFAULT_OLLIE_BASE_URL,
@@ -22,6 +25,7 @@ __all__ = [
     "ExecutionSpanCollector",
     "ExecutionType",
     "add_interaction_attributes",
+    "add_span_attributes",
     "attach_ollie",
     "create_ollie_client",
     "get_last_wire_payload",

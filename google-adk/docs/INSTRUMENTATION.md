@@ -31,8 +31,8 @@ The `[agent]` extra installs `google-adk` and `google-genai`.
 If `ollie-sdk` is not on PyPI yet:
 
 ```bash
-pip install "ollie-sdk @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.0"
-pip install "ollie-integrations-google-adk[agent] @ git+https://github.com/varunnaganathan/ollie-integrations.git@google-adk-v0.3.2#subdirectory=google-adk"
+pip install "git+https://github.com/varunnaganathan/ollie-sdk.git@v0.1.0#egg=ollie-sdk"
+pip install "ollie-integrations-google-adk[agent] @ git+https://github.com/varunnaganathan/ollie-integrations.git@google-adk-v0.3.3#subdirectory=google-adk"
 ```
 
 ---
@@ -171,9 +171,11 @@ Trace metadata includes `agent_id`, `session_id`, and `workflow.name` (your `app
 
 ---
 
-## Custom run attributes
+## Custom attributes
 
-Attach product metadata to the active **run** while `Runner.run` / `run_async` is in flight (tool body, callback, or middleware). Register non-built-in names once with `client.define_feature(...)` before ingest.
+### Run / interaction (all versions with `add_interaction_attributes`)
+
+Attach product metadata to the active **run** while `Runner.run` / `run_async` is in flight. Register non-built-in names once with `client.define_feature(...)` before ingest.
 
 ```python
 from ollie_integrations_google_adk import add_interaction_attributes
@@ -188,7 +190,20 @@ client.define_feature(
 add_interaction_attributes({"user_tier": "pro", "request_id": "req-1"})
 ```
 
-Default target is `interaction="run"` (recommended). Prefer run-level over `interaction="agent"`. Auto-collected span properties (tokens, `author`, tool/LLM errors) need no extra calls.
+Default target is `interaction="run"`. With **0.3.3+**, `interaction="agent"` also copies custom keys onto that agent span’s `properties`.
+
+### Span properties (0.3.3+)
+
+Attach metadata to the **current open span** (tool / llm / agent). No `define_feature` required — values land on span `properties`.
+
+```python
+from ollie_integrations_google_adk import add_span_attributes
+
+# Inside a tool body (or while that span is open):
+add_span_attributes({"vendor": "core_ledger", "retry_count": 0})
+```
+
+Reserved keys (`kind`, `name`, `status`, tokens, …) cannot be overwritten. Auto-collected span properties still need no extra calls.
 
 ---
 

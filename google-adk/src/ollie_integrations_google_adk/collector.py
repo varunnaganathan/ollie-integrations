@@ -152,6 +152,18 @@ class ExecutionSpanCollector:
     def current_node_id(self) -> str | None:
         return self._stack[-1] if self._stack else None
 
+    def current_span_id(self) -> str | None:
+        """Innermost open tool / llm / agent node (skips workflow)."""
+        for nid in reversed(self._stack):
+            node = self._nodes.get(nid)
+            if node is not None and node.execution_type in (
+                ExecutionType.TOOL,
+                ExecutionType.LLM,
+                ExecutionType.AGENT,
+            ):
+                return nid
+        return None
+
     def current_agent_id(self) -> str | None:
         for nid in reversed(self._stack):
             node = self._nodes[nid]
