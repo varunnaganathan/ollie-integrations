@@ -171,6 +171,27 @@ Trace metadata includes `agent_id`, `session_id`, and `workflow.name` (your `app
 
 ---
 
+## Custom run attributes
+
+Attach product metadata to the active **run** while `Runner.run` / `run_async` is in flight (tool body, callback, or middleware). Register non-built-in names once with `client.define_feature(...)` before ingest.
+
+```python
+from ollie_integrations_google_adk import add_interaction_attributes
+
+client.define_feature(
+    "user_tier",
+    kind="observable",
+    description="Customer plan tier at request time",
+)
+
+# During an active run:
+add_interaction_attributes({"user_tier": "pro", "request_id": "req-1"})
+```
+
+Default target is `interaction="run"` (recommended). Prefer run-level over `interaction="agent"`. Auto-collected span properties (tokens, `author`, tool/LLM errors) need no extra calls.
+
+---
+
 ## Multi-agent workflows
 
 `SequentialAgent`, `ParallelAgent`, `LoopAgent`, and `LlmAgent` with `sub_agents` are supported with the same instrumentation:

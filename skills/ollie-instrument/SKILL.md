@@ -57,6 +57,26 @@ attach_ollie(
 # Keep create_session → run / run_async. Do not wrap Runner yourself.
 ```
 
+#### Optional — custom run attributes (ADK)
+
+Attach product metadata (request id, plan tier, locale, …) onto the active **run** while `Runner.run` / `run_async` is in flight (tool body, callback, or middleware). Register non-built-in names once with `define_feature` before ingest.
+
+```python
+from ollie_integrations_google_adk import add_interaction_attributes
+
+# Once at startup (after create_ollie_client), for each custom key:
+client.define_feature(
+    "user_tier",
+    kind="observable",  # or "behavioral" / "attribution"
+    description="Customer plan tier at request time",
+)
+
+# Inside a tool / callback during an active run:
+add_interaction_attributes({"user_tier": "pro", "request_id": "req-1"})
+# Default target is interaction="run" (recommended). Prefer run-level over interaction="agent".
+```
+
+Auto-collected span properties (tokens, `author`, tool/LLM errors, etc.) need no extra calls. Details: `google-adk/docs/INSTRUMENTATION.md` in this repo.
 
 ### OpenAI Agents
 
