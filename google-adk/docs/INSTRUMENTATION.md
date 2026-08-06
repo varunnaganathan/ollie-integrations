@@ -173,7 +173,14 @@ Trace metadata includes `agent_id`, `session_id`, and `workflow.name` (your `app
 
 ## Custom attributes
 
-### Run / interaction (all versions with `add_interaction_attributes`)
+### Version capabilities
+
+| Package version | Run / interaction attrs (`add_interaction_attributes`) | Span attrs (`add_span_attributes`) |
+|-----------------|--------------------------------------------------------|------------------------------------|
+| `<=0.3.2` | Yes (run-level; register with `define_feature`) | No |
+| `0.3.3+` (current pin `google-adk-v0.3.3`) | Yes | Yes — current open tool / llm / agent span |
+
+### Run / interaction
 
 Attach product metadata to the active **run** while `Runner.run` / `run_async` is in flight. Register non-built-in names once with `client.define_feature(...)` before ingest.
 

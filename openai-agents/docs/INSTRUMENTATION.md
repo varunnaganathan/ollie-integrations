@@ -6,7 +6,7 @@
 pip install ollie-sdk "ollie-integrations-openai-agents[agent]"
 ```
 
-**PyPI not available yet?** See [../docs/customers/install-before-pypi.md](../docs/customers/install-before-pypi.md).
+**PyPI not available yet?** Install from the public monorepo pin:
 
 ```bash
 pip install "ollie-sdk @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.0"
@@ -35,9 +35,16 @@ result = Runner.run_sync(agent, "Weather in Paris?")
 - `OLLIE_API_KEY`, `OLLIE_AGENT_ID` — Ollie
 - `OPENAI_API_KEY` — OpenAI (not sent to Ollie)
 
-## Custom attributes (0.2.2+)
+## Custom attributes
 
-### Run / interaction
+### Version capabilities
+
+| Package version | Run attrs (`add_interaction_attributes`) | Span attrs (`add_span_attributes`) |
+|-----------------|------------------------------------------|------------------------------------|
+| `<=0.2.1` | No | No |
+| `0.2.2+` (current pin `openai-agents-v0.2.2`) | Yes — register with `define_feature` | Yes — while the span is open (e.g. inside a `@function_tool`) |
+
+### Run / interaction (0.2.2+)
 
 ```python
 from ollie_integrations_openai_agents import add_interaction_attributes
@@ -52,7 +59,7 @@ client.define_feature(
 add_interaction_attributes({"user_tier": "pro", "request_id": "req-1"})
 ```
 
-### Span properties
+### Span properties (0.2.2+)
 
 ```python
 from ollie_integrations_openai_agents import add_span_attributes
@@ -63,7 +70,7 @@ def get_balance(account_id: str) -> dict:
     return {"balance": 10}
 ```
 
-Call `add_span_attributes` while the tool/llm/agent span is open (e.g. inside the tool body). No `define_feature` required — values land on span `properties`. Reserved keys (`kind`, `name`, `status`, …) cannot be overwritten. On older pins (`<=0.2.1`) these APIs are absent.
+Call `add_span_attributes` while the tool/llm/agent span is open (e.g. inside the tool body). No `define_feature` required — values land on span `properties`. Reserved keys (`kind`, `name`, `status`, …) cannot be overwritten.
 
 ## Verify
 
