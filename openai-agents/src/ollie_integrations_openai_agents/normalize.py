@@ -20,6 +20,15 @@ def normalize_collector(collector: RunCollector) -> dict[str, Any]:
         latency_ms=collector.latency_ms,
         interaction_ref="ix_0",
     )
+    attributes: list[dict[str, Any]] = [
+        {"name": "latency_ms", "value": collector.latency_ms},
+        {"name": "success", "value": success},
+    ]
+    for name, value in collector.run_attributes.items():
+        key = str(name or "").strip()
+        if not key or key in ("latency_ms", "success"):
+            continue
+        attributes.append({"name": key, "value": value})
     return {
         "interaction_type": "run",
         "name": collector.workflow_name,
@@ -27,10 +36,7 @@ def normalize_collector(collector: RunCollector) -> dict[str, Any]:
         "output": collector.output_text,
         "events": events,
         "_signal_hits": signal_hits,
-        "attributes": [
-            {"name": "latency_ms", "value": collector.latency_ms},
-            {"name": "success", "value": success},
-        ],
+        "attributes": attributes,
         "started_at": collector.started_at,
         "ended_at": collector.ended_at or collector.started_at,
     }

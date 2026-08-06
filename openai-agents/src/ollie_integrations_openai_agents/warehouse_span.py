@@ -25,12 +25,13 @@ def warehouse_shape_span(span: dict[str, Any]) -> dict[str, Any]:
     status = str(out.get("status") or "success").strip() or "success"
 
     props = dict(out.get("properties") or {}) if isinstance(out.get("properties"), dict) else {}
+    # Preserve custom properties already set (e.g. from add_span_attributes); fill builtins.
     props.setdefault("kind", span_type)
     props.setdefault("name", name)
     props.setdefault("status", status)
     for key in _PROP_KEYS:
-        if key in out and key not in props and out[key] is not None:
-            props[key] = out[key]
+        if key in out and out[key] is not None:
+            props.setdefault(key, out[key])
     out["properties"] = props
 
     if not isinstance(out.get("input"), dict):

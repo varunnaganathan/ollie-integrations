@@ -91,7 +91,7 @@ On older pins (`<=0.3.2`), skip span-level calls; run-level `add_interaction_att
 
 ```bash
 pip install "ollie-sdk @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.0"
-pip install "ollie-integrations-openai-agents[agent] @ git+https://github.com/varunnaganathan/ollie-integrations.git@openai-agents-v0.2.1#subdirectory=openai-agents"
+pip install "ollie-integrations-openai-agents[agent] @ git+https://github.com/varunnaganathan/ollie-integrations.git@openai-agents-v0.2.2#subdirectory=openai-agents"
 ```
 
 ```python
@@ -106,6 +106,27 @@ attach_ollie(
 )
 # Once at startup, before Runner.run / run_sync. Keep real Runner path.
 ```
+
+#### Optional — custom attributes (OpenAI Agents **0.2.2+**)
+
+Run-level (register with `define_feature` before ingest):
+
+```python
+from ollie_integrations_openai_agents import add_interaction_attributes
+
+client.define_feature("user_tier", kind="observable", description="Plan tier")
+add_interaction_attributes({"user_tier": "pro", "request_id": "req-1"})
+```
+
+Span-level (no `define_feature`; lands on span `properties` while that span is open, e.g. inside a `@function_tool`):
+
+```python
+from ollie_integrations_openai_agents import add_span_attributes
+
+add_span_attributes({"vendor": "core_ledger", "retry_count": 0})
+```
+
+On older pins (`<=0.2.1`) these APIs are absent — upgrade to `@openai-agents-v0.2.2`. Details: `openai-agents/docs/INSTRUMENTATION.md`.
 
 ### Custom Python / other frameworks
 

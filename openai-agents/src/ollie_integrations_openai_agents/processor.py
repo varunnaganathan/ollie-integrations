@@ -23,14 +23,22 @@ class OllieTracingProcessor:
     def on_span_start(self, span: Any) -> None:
         sid = getattr(span, "span_id", None) or id(span)
         self._open_mono[str(sid)] = time.monotonic()
+        collector = RunCollector.current()
+        if collector is not None:
+            collector.push_open_span(str(sid))
 
     def on_span_end(self, span: Any) -> None:
         collector = RunCollector.current()
-        if collector is None:
-            return
-        mapped = _map_span(span, self._open_mono)
-        if mapped is not None:
-            collector.add_span(mapped)
+        sid = str(getattr(span, "span_id", None) or id(span))
+        try:
+            if collector is None:
+                return
+            mapped = _map_span(span, self._open_mono)
+            if mapped is not None:
+                collector.add_span(mapped)
+        finally:
+            if collector is not None:
+                collector.pop_open_span(sid)
 
     def shutdown(self) -> None:
         self._open_mono.clear()
