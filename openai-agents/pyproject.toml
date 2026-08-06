@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ollie-integrations-openai-agents"
+version = "0.2.1"
+description = "OpenAI Agents SDK integration for Ollie v2 ingest (single-run model)"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [{ name = "Ollie", email = "support@ollie.ai" }]
+dependencies = ["ollie-sdk>=0.1.0"]
+
+[project.optional-dependencies]
+agent = ["openai-agents>=0.1.0"]
+dev = ["pytest>=7.0.0", "pytest-asyncio>=0.23.0", "python-dotenv>=1.0.0"]
+
+[project.urls]
+Homepage = "https://github.com/varunnaganathan/ollie-integrations/tree/main/openai-agents"
+Documentation = "https://github.com/varunnaganathan/ollie-integrations/blob/main/openai-agents/docs/INSTRUMENTATION.md"
+Repository = "https://github.com/varunnaganathan/ollie-integrations"
+Issues = "https://github.com/varunnaganathan/ollie-integrations/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ollie_integrations_openai_agents"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "tests"]
+asyncio_mode = "auto"
+markers = [
+    "live: requires OpenAI API key and openai-agents",
+    "install: customer GitHub install in fresh venv",
+    "instrumentation: attach_ollie hook tests",
+    "e2e_ingest: live ingest stack required",
+]

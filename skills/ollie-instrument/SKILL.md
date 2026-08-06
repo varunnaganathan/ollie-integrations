@@ -57,6 +57,27 @@ attach_ollie(
 # Keep create_session → run / run_async. Do not wrap Runner yourself.
 ```
 
+
+### OpenAI Agents
+
+```bash
+pip install "ollie-sdk @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.0"
+pip install "ollie-integrations-openai-agents[agent] @ git+https://github.com/varunnaganathan/ollie-integrations.git@openai-agents-v0.2.1#subdirectory=openai-agents"
+```
+
+```python
+import os
+from ollie_integrations_openai_agents import attach_ollie, create_ollie_client
+
+client = create_ollie_client()
+attach_ollie(
+    client,
+    workflow_name="my_openai_agent",
+    flush_mode=os.getenv("OLLIE_FLUSH_MODE", "ingest"),
+)
+# Once at startup, before Runner.run / run_sync. Keep real Runner path.
+```
+
 ### Custom Python / other frameworks
 
 Install `ollie-sdk` and follow onboarding docs for `client.workflow` + `ollie.tool`, or the matching `attach_ollie` package when published under this monorepo.
