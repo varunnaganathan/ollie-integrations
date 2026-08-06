@@ -1,0 +1,25 @@
+{
+  "name": "@ollie/integrations-openai-agents",
+  "version": "0.2.1",
+  "description": "OpenAI Agents SDK integration for Ollie v2 ingest (single-run model)",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "typescript": "^5.4.0"
+  },
+  "peerDependencies": {
+    "@openai/agents": ">=0.1.0"
+  },
+  "devDependencies": {
+    "@openai/agents": "^0.1.0",
+    "@types/node": "^20.0.0",
+    "vitest": "^2.0.0"
+  },
+  "files": ["dist", "src"]
+}

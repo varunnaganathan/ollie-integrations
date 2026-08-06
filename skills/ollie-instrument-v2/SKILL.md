@@ -42,7 +42,8 @@ Onboarding check: `flush_mode="validate"` (or `OLLIE_FLUSH_MODE=validate`). Prod
 |---------|-----------|
 | ollie-sdk (Python + TS) | `v0.3.1` |
 | Google ADK | `google-adk-v0.3.3` |
-| OpenAI Agents | `openai-agents-v0.2.2` |
+| OpenAI Agents (Python) | `openai-agents-v0.2.2` |
+| OpenAI Agents (TypeScript) | `openai-agents-ts-v0.2.1` |
 
 ## Google ADK
 
@@ -74,9 +75,9 @@ https://raw.githubusercontent.com/varunnaganathan/ollie-integrations/google-adk-
 
 Capability pointers (details in docs): run attrs via `add_interaction_attributes`; span attrs on **0.3.3+** via `add_span_attributes`.
 
-## OpenAI Agents
+## OpenAI Agents (Python)
 
-Detect: `agents.Agent`, `Runner.run` / `run_sync`, `openai-agents`.
+Detect: `agents.Agent`, `Runner.run` / `run_sync`, `openai-agents` (Python).
 
 ```bash
 pip install "ollie-sdk @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.1"
@@ -100,6 +101,40 @@ attach_ollie(
 https://raw.githubusercontent.com/varunnaganathan/ollie-integrations/openai-agents-v0.2.2/openai-agents/docs/INSTRUMENTATION.md
 
 Capability pointers (details in docs): run + span attrs on **0.2.2+** (`add_interaction_attributes`, `add_span_attributes`).
+
+## OpenAI Agents (TypeScript)
+
+Detect: `@openai/agents`, `Agent`, `Runner.run` in TypeScript/Node.
+
+```bash
+npm install @openai/agents
+npm install "github:varunnaganathan/ollie-integrations#openai-agents-ts-v0.2.1:openai-agents-ts"
+npm install "github:varunnaganathan/ollie-sdk#v0.3.1:packages/ts"
+```
+
+Wire-format package: populate `RunCollector` from your processor / run wrapper (each span needs `span_ref`), then `collectorToWirePayload` / `flushCollectorToClient`.
+
+```ts
+import {
+  RunCollector,
+  addInteractionAttributes,
+  addSpanAttributes,
+  emitSignal,
+  collectorToWirePayload,
+} from "@ollie/integrations-openai-agents";
+
+const collector = new RunCollector({ workflowName: "my_openai_agent", inputText: userMsg });
+RunCollector.runWith(collector, () => {
+  addInteractionAttributes({ user_tier: "pro" });
+  // pushOpenSpan → addSpanAttributes / emitSignal → addSpan → popOpenSpan → close
+});
+const wire = collectorToWirePayload(collector, process.env.OLLIE_AGENT_ID!);
+```
+
+**Docs (required for anything beyond the stub):**  
+https://raw.githubusercontent.com/varunnaganathan/ollie-integrations/openai-agents-ts-v0.2.1/openai-agents-ts/docs/INSTRUMENTATION.md
+
+Capability pointers on **0.2.1+**: `addInteractionAttributes`, `addSpanAttributes`, `emitSignal`.
 
 ## Custom Python / TypeScript (ollie-sdk)
 
