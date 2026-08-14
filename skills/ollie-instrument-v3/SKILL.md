@@ -1,18 +1,22 @@
 ---
 name: ollie-instrument-v3
-description: Router skill with closed-loop onboarding — validate response check, diagnose until verified, poll UU issues until onboarding complete; never ask Ollie support whether traces landed.
+description: Catalog-driven closed-loop onboarding — fetch pins from the catalog API, instrument from docs_url, poll probe until ok; never ask Ollie support whether traces landed.
 ---
 
-# Ollie instrumentation (v3 — closed-loop router)
+# Ollie instrumentation (v3 — catalog + probe)
 
-Use when onboarding with Ollie or adding tracing. This skill **routes** and **verifies end-to-end** until issues are back.
+Use when onboarding with Ollie or adding tracing.
 
-**v1** (fat how-tos, unchanged): `skills/ollie-instrument/SKILL.md`  
-**v2** (router only, unchanged): `skills/ollie-instrument-v2/SKILL.md`
+This skill **does not embed install pins**. Pins, detect rules, and docs URLs come from the **catalog API**. Adding a new integration is a catalog update only.
+
+**v1** (fat how-tos, unchanged): `skills/ollie-instrument/SKILL.md`
+**v2** (router with hardcoded pins, unchanged): `skills/ollie-instrument-v2/SKILL.md`
 
 ## Required environment
 
-Do **not** invent credentials. Use onboarding / `.ollie/env.sh` / the customer-provided values.
+Do **not** invent credentials. Use onboarding / `.ollie/env.sh` / customer-provided values.
+
+If `OLLIE_API_KEY` or `OLLIE_AGENT_ID` is unset, stop and fix env before calling ingest. Missing env never reaches Ollie (`NEVER_FLUSHED`). HTTP **401** on probe/ingest means `AUTH_MISSING` (bad or missing key).
 
 ```bash
 export OLLIE_API_KEY="..."
@@ -23,166 +27,68 @@ export OLLIE_INGEST_BASE_URL="${OLLIE_INGEST_BASE_URL:-https://olliejudge-sentry
 
 (`OLLIE_CLOUD_INGEST_BASE_URL` is an alias for `OLLIE_INGEST_BASE_URL` if set.)
 
-## Closed-loop onboarding (mandatory — once per setup)
+## Closed loop (mandatory)
 
-**Do not ask the customer to check with Ollie support to learn whether traces landed — use the validate response body + diagnose.**
-
-**Onboarding complete** only when `GET /issues/unknown-unknown` returns a **non-empty** issues list. Until then, report status as **in progress**.
+**Done** only when probe returns `"ok": true` for **this** `test-offline` session. Do not wait for unknown-unknown issues. Do not use tenant-wide diagnose `trace_count` as the stop condition.
 
 ```text
-1. Confirm OLLIE_API_KEY + OLLIE_AGENT_ID (+ BASE / INGEST URLs) in the same env that runs the app
-2. Detect stack → install the pin from the table below
-3. Apply the smallest attach stub (custom SDK: tracing=true, all LLM providers)
-4. VALIDATE: flush_mode=validate / OLLIE_FLUSH_MODE=validate — run one invocation
-5. INSPECT VALIDATE RESPONSE BODY (HTTP 200 is not enough)
-   - Require accepted: true (or batch result equivalent with no blocking errors)
-   - If accepted false / errors → show the user the errors, fix, retry validate. Do NOT ingest yet.
-6. INGEST: flush_mode=ingest — run one invocation
-7. POLL DIAGNOSE until verified:true AND latest related sdk.trace.ingest status is completed (not failed)
-8. If hint is validate_only_or_failed / events_received_but_no_trace / no_events,
-   OR any recent_events[].last_error → show that text to the user, fix, re-run validate→ingest→diagnose
-9. POLL UU issues until non-empty; while empty report interaction_count vs threshold + uu_onboarding
-10. When issues appear → summarize, ask user if they want help fixing, point to dashboard
+MAX = 8
+1. Confirm OLLIE_API_KEY + OLLIE_AGENT_ID in the same env that runs the app
+2. GET $OLLIE_INGEST_BASE_URL/v1/sdk/instrumentation/catalog  (no API key)
+3. Match this repo to integrations[] using detect.imports / detect.pypi / detect.npm.
+   If several match, pick the lowest priority number (frameworks beat generic SDK).
+4. Install that entry's install.pip or install.npm exactly. Fetch docs_url and follow it
+   for attach stubs. Do not invent APIs from memory. Do not use install lines from this skill.
+5. Apply the smallest patch from those docs.
+6. Choose session_id: must contain "test-offline" and be <= 36 chars
+   (example: test-offline-a1b2c3d4). Use it as the trace/session id for the sample run.
+7. VALIDATE flush (flush_mode=validate). Inspect the HTTP body — require accepted.
+   If accepted false, apply issues[].fix from the validate body; retry. Do not ingest yet.
+8. INGEST flush (flush_mode=ingest) with the same session_id.
+9. POLL GET .../v1/sdk/onboarding/probe?agent_id=&session_id= for 2–3 minutes
+   until ok:true. If HTTP 401 → AUTH_MISSING (fix key). Else apply issues[].fix
+   (and next_action). Do not guess from error_code alone.
+10. Fix, re-run validate→ingest→probe. Cap MAX attempts, then hand off with evidence.
 ```
 
-Never mark setup done while diagnose is not verified. Never mark **onboarding complete** while UU issues are empty.
+Never mark instrumentation done while probe `ok` is false.
 
-### Curls (copy as written)
+### Curls
 
 ```bash
-# After validate flush — parse JSON; require accepted (shape depends on SDK batch response)
-# After ingest — poll until verified
+# Public catalog (no API key)
+curl -sS "$OLLIE_INGEST_BASE_URL/v1/sdk/instrumentation/catalog"
+
+# After ingest — poll until ok (same test-offline session_id)
 curl -sS -H "X-API-Key: $OLLIE_API_KEY" \
-  "$OLLIE_INGEST_BASE_URL/v1/sdk/onboarding/diagnose?agent_id=$OLLIE_AGENT_ID"
-
-# Until onboarding complete (issues non-empty)
-curl -sS -H "X-API-Key: $OLLIE_API_KEY" \
-  "$OLLIE_BASE_URL/issues/unknown-unknown?status=active"
+  "$OLLIE_INGEST_BASE_URL/v1/sdk/onboarding/probe?agent_id=$OLLIE_AGENT_ID&session_id=$SESSION_ID"
 ```
 
-Diagnose fields to read: `verified`, `hint`, `trace_count`, `interaction_count`, `uu_onboarding`, `recent_events` (`event_type`, `status`, `last_error`, `session_id`).
+Probe fields: `ok`, `error_code`, `issues[]` (`code`, `path`, `message`, `fix`, `got`, `expected`), `next_action`, `nearby_session_ids`.
 
-HTTP 200 on `/v1/sdk/events/batch` does **not** mean a warehouse trace exists — always confirm with diagnose.
+**Always apply `issues[].fix` in order.** Do not invent a patch from `error_code` alone.
 
-**Before enrichment** (custom attributes, signals, multi-agent notes, troubleshooting): fetch the framework **INSTRUMENTATION.md** at the pin URL below. Do not invent APIs from memory.
+| error_code | Meaning |
+|------------|---------|
+| `OK` | Warehouse trace exists for this session — done |
+| `MISSING_WORKFLOW` | No workflow object — wrap run / attach_ollie |
+| `EMPTY_INTERACTIONS` | Flush before a real run |
+| `MISSING_AGENT_ID` | Set `OLLIE_AGENT_ID` |
+| `SESSION_ID_TOO_LONG` | session_id > 36 chars — use `test-offline-<8hex>` |
+| `SCHEMA_REJECTED` | Other field errors — follow `issues[].path` + `fix` |
+| `NO_SPANS` | Validate ok but no child spans — fix attach/tracing |
+| `VALIDATE_ONLY` | You validated but never ingested |
+| `NEVER_FLUSHED` | Nothing reached ingest for this session |
+| `SESSION_ID_MISMATCH` | You flushed a different test-offline id — see `nearby_session_ids` |
+| `AGENT_ID_MISMATCH` | Wrong `OLLIE_AGENT_ID` |
+| `QUEUED` | Wait and re-poll |
+| `PERSIST_FAILED` | Warehouse write failed — follow `issues[].fix` |
+| HTTP 401 | `AUTH_MISSING` — fix `OLLIE_API_KEY` |
 
-## Current pins
+HTTP 200 on `/v1/sdk/events/batch` does **not** mean a warehouse trace exists — always confirm with **probe**.
 
-| Framework | Install pin(s) | Docs (one per framework) |
-|-----------|----------------|--------------------------|
-| ollie-sdk (custom Py/TS) | `v0.3.3` | [INSTRUMENTATION.md](https://raw.githubusercontent.com/varunnaganathan/ollie-sdk/v0.3.3/docs/INSTRUMENTATION.md) |
-| Google ADK | `google-adk-v0.3.3` | [INSTRUMENTATION.md](https://raw.githubusercontent.com/varunnaganathan/ollie-integrations/google-adk-v0.3.3/google-adk/docs/INSTRUMENTATION.md) |
-| OpenAI Agents | Py `openai-agents-v0.2.3` · TS `openai-agents-ts-v0.2.2` | [INSTRUMENTATION.md](https://raw.githubusercontent.com/varunnaganathan/ollie-integrations/openai-agents-v0.2.3/openai-agents/docs/INSTRUMENTATION.md) (identical file under `openai-agents-ts` at the TS tag) |
+Optional after probe ok: dashboard `https://{slug}.tryollie.com/data`. Unknown-unknown issues are a later product step, not this loop.
 
-## Google ADK
+## Detect (from catalog only)
 
-Detect: `google.adk`, `LlmAgent`, `Runner.run_async` / `Runner.run`.
-
-```bash
-pip install "ollie-sdk @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.3"
-pip install "ollie-integrations-google-adk[agent] @ git+https://github.com/varunnaganathan/ollie-integrations.git@google-adk-v0.3.3#subdirectory=google-adk"
-```
-
-Also need `GOOGLE_API_KEY` or `GEMINI_API_KEY` (not sent to Ollie).
-
-```python
-import os
-from ollie_integrations_google_adk import attach_ollie, create_ollie_client
-
-client = create_ollie_client()
-attach_ollie(
-    client,
-    app_name="my_adk_app",  # same string as Runner(app_name=...)
-    flush_mode=os.getenv("OLLIE_FLUSH_MODE", "ingest"),
-)
-# Once at startup, before first Runner.run / run_async.
-```
-
-**Docs:** https://raw.githubusercontent.com/varunnaganathan/ollie-integrations/google-adk-v0.3.3/google-adk/docs/INSTRUMENTATION.md
-
-## OpenAI Agents
-
-Detect: `agents.Agent` / `@openai/agents`, `Runner.run` / `run_sync`.
-
-**Python install:**
-
-```bash
-pip install "ollie-sdk @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.3"
-pip install "ollie-integrations-openai-agents[agent] @ git+https://github.com/varunnaganathan/ollie-integrations.git@openai-agents-v0.2.3#subdirectory=openai-agents"
-```
-
-```python
-import os
-from ollie_integrations_openai_agents import attach_ollie, create_ollie_client
-
-client = create_ollie_client()
-attach_ollie(
-    client,
-    workflow_name="my_openai_agent",
-    flush_mode=os.getenv("OLLIE_FLUSH_MODE", "ingest"),
-)
-```
-
-**TypeScript install:**
-
-```bash
-npm install @openai/agents
-npm install "github:varunnaganathan/ollie-integrations#openai-agents-ts-v0.2.2:openai-agents-ts"
-npm install "github:varunnaganathan/ollie-sdk#v0.3.3:packages/ts"
-```
-
-**Docs:** https://raw.githubusercontent.com/varunnaganathan/ollie-integrations/openai-agents-v0.2.3/openai-agents/docs/INSTRUMENTATION.md
-
-## Custom Python / TypeScript (ollie-sdk)
-
-Detect: direct OpenAI / Anthropic / Gemini SDK calls, or manual `client.workflow` / `tool` (no agent framework).
-
-**Default onboarding:** always call `init` / `initAsync` with **`tracing=True` / `tracing: true`**. Do **not** pass a narrow `instruments` allowlist unless the customer asks.
-
-**Python:**
-
-```bash
-pip install "ollie-sdk[tracing] @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.3"
-```
-
-```python
-import ollie
-
-client = ollie.init(tracing=True)
-with client.workflow(name="my_app", input=user_msg) as wf:
-    wf.output = "..."
-# Onboarding: validate first, then ingest (see closed-loop above)
-wf.flush()          # or flush_mode=validate path per docs
-wf.flush_ingest()   # after validate accepted
-```
-
-**TypeScript:**
-
-```bash
-npm install "github:varunnaganathan/ollie-sdk#v0.3.3:packages/ts"
-npm install @opentelemetry/api @opentelemetry/instrumentation \
-  @opentelemetry/resources @opentelemetry/sdk-trace-node \
-  @opentelemetry/instrumentation-openai \
-  @traceloop/instrumentation-anthropic
-```
-
-```ts
-import { initAsync } from "@ollie/sdk";
-
-const client = await initAsync({ tracing: true });
-const wf = client.workflow({ name: "my_app", input: userMsg });
-wf.enter();
-try {
-  wf.output = "...";
-} finally {
-  wf.exit();
-}
-await wf.flushIngest();
-await client.shutdown();
-```
-
-**Docs:** https://raw.githubusercontent.com/varunnaganathan/ollie-sdk/v0.3.3/docs/INSTRUMENTATION.md
-
-## Dashboard
-
-After diagnose `verified`, point the user at `https://{slug}.tryollie.com/data` (Trajectories) and `/issues` once UU issues appear.
+Do not hardcode framework names beyond matching catalog `detect` fields against the repo (`pyproject.toml`, `package.json`, imports).
