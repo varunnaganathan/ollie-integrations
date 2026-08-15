@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import functools
 import logging
+import os
 from typing import Any
 
 from ollie_integrations_openai_agents.collector import RunCollector
@@ -69,11 +70,30 @@ def _install_patches() -> None:
     _patched = True
 
 
+_RUNNER_STRIP_KEYS = frozenset({"session_id"})
+
+
+def _collector_session_id(kwargs: dict[str, Any]) -> str | None:
+    env = (os.environ.get("OLLIE_SESSION_ID") or "").strip()
+    if env:
+        return env
+    for key in ("conversation_id", "session_id"):
+        val = kwargs.get(key)
+        if val:
+            return str(val)
+    return None
+
+
+def _runner_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
+    return {k: v for k, v in kwargs.items() if k not in _RUNNER_STRIP_KEYS}
+
+
 def _wrap_run_async(orig):
     @functools.wraps(orig)
     async def wrapper(cls, starting_agent, input, **kwargs):
+        runner_kwargs = _runner_kwargs(kwargs)
         return await _run_with_collector(
-            lambda: orig(cls, starting_agent, input, **kwargs),
+            lambda: orig(cls, starting_agent, input, **runner_kwargs),
             agent=starting_agent,
             input_value=input,
             kwargs=kwargs,
@@ -85,15 +105,16 @@ def _wrap_run_async(orig):
 def _wrap_run_sync(orig):
     @functools.wraps(orig)
     def wrapper(cls, starting_agent, input, **kwargs):
-        return _run_sync_with_collector(orig, cls, starting_agent, input, **kwargs)
+        return _run_sync_with_collector(orig, cls, starting_agent, input, kwargs)
 
     return wrapper
 
 
 def _run_sync_with_collector(orig, cls, starting_agent, input_value, kwargs):
     global _last_wire_payload
+    runner_kwargs = _runner_kwargs(kwargs)
     if _client is None:
-        return orig(cls, starting_agent, input_value, **kwargs)
+        return orig(cls, starting_agent, input_value, **runner_kwargs)
 
     name = _workflow_name
     if hasattr(starting_agent, "name") and starting_agent.name:
@@ -101,12 +122,12 @@ def _run_sync_with_collector(orig, cls, starting_agent, input_value, kwargs):
 
     collector = RunCollector(
         workflow_name=name,
-        session_id=kwargs.get("conversation_id") or kwargs.get("session_id"),
+        session_id=_collector_session_id(kwargs),
         input_text=to_input_str(input_value),
     )
     RunCollector.set_current(collector)
     try:
-        result = orig(cls, starting_agent, input_value, **kwargs)
+        result = orig(cls, starting_agent, input_value, **runner_kwargs)
         out = str(getattr(result, "final_output", None) or getattr(result, "finalOutput", "") or "")
         collector.close(output=out, success=True)
         return result
@@ -139,7 +160,7 @@ async def _run_with_collector(coro_factory, *, agent, input_value, kwargs):
 
     collector = RunCollector(
         workflow_name=name,
-        session_id=kwargs.get("conversation_id") or kwargs.get("session_id"),
+        session_id=_collector_session_id(kwargs),
         input_text=to_input_str(input_value),
     )
     RunCollector.set_current(collector)

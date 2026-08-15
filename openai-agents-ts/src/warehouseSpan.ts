@@ -34,3 +34,20 @@ export function warehouseShapeSpan(span: SpanRecord): SpanRecord {
 export function warehouseShapeSpans(spans: SpanRecord[]): SpanRecord[] {
   return spans.map(warehouseShapeSpan);
 }
+
+export function dropOrphanParentSpanRefs(
+  spans: SpanRecord[],
+  interactionRef = "ix_0",
+): SpanRecord[] {
+  const refs = new Set(
+    spans.map((s) => String(s.span_ref ?? "").trim()).filter(Boolean),
+  );
+  if (interactionRef) refs.add(interactionRef);
+  return spans.map((span) => {
+    const parent = String(span.parent_span_ref ?? "").trim();
+    if (!parent || refs.has(parent)) return span;
+    const next = { ...span };
+    delete next.parent_span_ref;
+    return next;
+  });
+}
