@@ -2,9 +2,9 @@ import { RunCollector } from "./collector.js";
 import { makeSignalHit } from "./hits.js";
 import { instrumentEvents } from "./signals.js";
 import type { SignalHit, WirePayload } from "./types.js";
-import { warehouseShapeSpans } from "./warehouseSpan.js";
+import { warehouseShapeSpans, dropOrphanParentSpanRefs } from "./warehouseSpan.js";
 
-const VERSION = "0.2.2";
+const VERSION = "0.2.3";
 const MAX_WIRE_CHARS = 32_000;
 
 function truncate(text: string | null | undefined): [string, boolean] {
@@ -21,7 +21,10 @@ export function collectorToWirePayload(
 ): WirePayload {
   const success = collector.status !== "failed";
   const interactionRef = "ix_0";
-  const shapedSpans = warehouseShapeSpans(collector.spans);
+  const shapedSpans = dropOrphanParentSpanRefs(
+    warehouseShapeSpans(collector.spans),
+    interactionRef,
+  );
   const { events, signalHits } = instrumentEvents(
     shapedSpans,
     collector.outputText,
@@ -79,11 +82,13 @@ export function collectorToWirePayload(
   }
 
   const ended = collector.endedAt ?? collector.startedAt;
+  const envSid =
+    typeof process !== "undefined" ? String(process.env.OLLIE_SESSION_ID ?? "").trim() : "";
   return {
     schema_version: 2,
     sdk: { name: "ollie-integrations-openai-agents-ts", version: VERSION },
     agent_id: agentId,
-    session_id: sessionId ?? collector.sessionId ?? agentId,
+    session_id: sessionId || collector.sessionId || envSid || agentId,
     workflow: {
       name: collector.workflowName,
       status: collector.status,
@@ -113,7 +118,13 @@ export async function flushCollectorToClient(
   client: import("./types.js").OllieClient,
   flushMode = "ingest",
 ): Promise<unknown> {
-  const payload = collectorToWirePayload(collector, client.agent_id, collector.sessionId);
+  const envSid =
+    typeof process !== "undefined" ? String(process.env.OLLIE_SESSION_ID ?? "").trim() : "";
+  const payload = collectorToWirePayload(
+    collector,
+    client.agent_id,
+    collector.sessionId || envSid || undefined,
+  );
   const mode = flushMode.toLowerCase();
   if (mode === "validate") return client._transport.validate_trace(payload, client._delivery);
   if (mode === "process") return client._transport.process_trace(payload, client._delivery);

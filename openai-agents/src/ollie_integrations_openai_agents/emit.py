@@ -9,6 +9,7 @@ from ollie_integrations_openai_agents.hits import make_signal_hit
 from ollie_integrations_openai_agents.normalize import normalize_collector
 from ollie_integrations_openai_agents.serialize import truncate
 from ollie_integrations_openai_agents.version import __version__
+from ollie_integrations_openai_agents.warehouse_span import drop_orphan_parent_span_refs
 
 
 def collector_to_wire_payload(
@@ -44,6 +45,9 @@ def _finalize_interaction(raw: dict[str, Any], *, interaction_ref: str) -> dict[
     events = dict(raw.get("events") or {"trigger": [], "context": [], "spans": []})
     events["trigger"] = []
     events["context"] = []
+    spans = events.get("spans") or []
+    if isinstance(spans, list):
+        events["spans"] = drop_orphan_parent_span_refs(spans, interaction_ref=interaction_ref)
 
     pending = list(raw.get("_signal_hits") or [])
     seen = {str(h.get("signal") or "") for h in pending if isinstance(h, dict)}

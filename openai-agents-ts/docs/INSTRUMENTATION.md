@@ -8,6 +8,7 @@ One guide for **Python** and **TypeScript**. Install the language pin you need; 
 |----------|----------|-------|
 | `OLLIE_API_KEY` | Yes | From Ollie onboarding / `.ollie/env.sh` |
 | `OLLIE_AGENT_ID` | Yes | Agent id from Ollie |
+| `OLLIE_SESSION_ID` | Onboarding | Ollie trace/session id (`test-offline-<8hex>`, ≤36 chars). **Not** a `Runner.run` kwarg. |
 | `OPENAI_API_KEY` | Yes (for live runs) | Stays on your machine — not sent to Ollie |
 | `OLLIE_BASE_URL` | Prod | Analysis / registry |
 | `OLLIE_INGEST_BASE_URL` | Prod | Event ingest |
@@ -18,9 +19,9 @@ One guide for **Python** and **TypeScript**. Install the language pin you need; 
 |----------|-------------|-------------------------|------------|------------------|
 | Python | `<=0.2.1` | No | No | No |
 | Python | `0.2.2` | Yes (`define_feature`) | Yes | No |
-| Python | `0.2.3+` (`openai-agents-v0.2.3`) | Yes | Yes | Yes (`emit_signal`) |
+| Python | `0.2.4+` (`openai-agents-v0.2.4`) | Yes | Yes | Yes (`emit_signal`); orphan parent_span_ref dropped; `OLLIE_SESSION_ID` |
 | TypeScript | `<=0.2.0` | No | No | No |
-| TypeScript | `0.2.1+` (`openai-agents-ts-v0.2.1` / `v0.2.2`) | Yes | Yes | Yes (`emitSignal`) |
+| TypeScript | `0.2.3+` (`openai-agents-ts-v0.2.3`) | Yes | Yes | Yes (`emitSignal`); orphan parent_span_ref dropped; `OLLIE_SESSION_ID` |
 
 Wire shape is the same in both languages: one `run` interaction per workflow invocation, warehouse `events.spans` + `_signal_hits`.
 
@@ -32,7 +33,7 @@ Wire shape is the same in both languages: one `run` interaction per workflow inv
 
 ```bash
 pip install "ollie-sdk @ git+https://github.com/varunnaganathan/ollie-sdk.git@v0.3.2"
-pip install "ollie-integrations-openai-agents[agent] @ git+https://github.com/varunnaganathan/ollie-integrations.git@openai-agents-v0.2.3#subdirectory=openai-agents"
+pip install "ollie-integrations-openai-agents[agent] @ git+https://github.com/varunnaganathan/ollie-integrations.git@openai-agents-v0.2.4#subdirectory=openai-agents"
 ```
 
 When PyPI is available: `pip install ollie-sdk "ollie-integrations-openai-agents[agent]"`.
@@ -60,6 +61,7 @@ result = Runner.run_sync(agent, "Weather in Paris?")
 ```
 
 Call `attach_ollie` once at startup before `Runner.run` / `run_sync`. Keep the real Runner path.
+Set `OLLIE_SESSION_ID` in the process env (do **not** pass `session_id=` into `Runner.run`).
 
 ### Custom attributes and signals
 
@@ -104,12 +106,13 @@ Sample: `python examples/sample_openai_agent/run.py --mode capabilities`
 ## TypeScript
 
 TypeScript is a **wire-format** package: populate `RunCollector` from your processor / run wrapper (each span needs `span_ref`), then flush. Python’s `attach_ollie` auto-processor is not mirrored yet.
+Set `OLLIE_SESSION_ID` (or pass `sessionId` into `RunCollector`) — emit uses the env var if the collector has no session.
 
 ### Install
 
 ```bash
 npm install @openai/agents
-npm install "github:varunnaganathan/ollie-integrations#openai-agents-ts-v0.2.2:openai-agents-ts"
+npm install "github:varunnaganathan/ollie-integrations#openai-agents-ts-v0.2.3:openai-agents-ts"
 npm install "github:varunnaganathan/ollie-sdk#v0.3.2:packages/ts"
 ```
 
