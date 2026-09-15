@@ -1,0 +1,13 @@
+{
+  "workflow_name": "sample_livekit_agent",
+  "min_turns": 1,
+  "required_span_types": [
+    "stt",
+    "turn_detection",
+    "agent",
+    "tool",
+    "tts"
+  ],
+  "agent_name": "support_agent",
+  "tool_name": "lookup_weather"
+}

@@ -9,6 +9,7 @@ Public packages for Ollie agent-framework integrations. The private Ollie backen
 | Google ADK | [`google-adk/`](google-adk/) | `@google-adk-v0.3.3#subdirectory=google-adk` |
 | OpenAI Agents (Python) | [`openai-agents/`](openai-agents/) | `@openai-agents-v0.2.3#subdirectory=openai-agents` |
 | OpenAI Agents (TypeScript) | [`openai-agents-ts/`](openai-agents-ts/) | `#openai-agents-ts-v0.2.2:openai-agents-ts` |
+| LiveKit Agents (Python) | [`livekit/`](livekit/) | `@livekit-v0.2.0#subdirectory=livekit` |
 
 ## Instrumentation skills
 

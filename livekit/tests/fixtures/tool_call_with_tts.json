@@ -1,0 +1,186 @@
+{
+  "schema_version": 2,
+  "sdk": {
+    "name": "ollie-integrations-livekit",
+    "version": "0.2.0"
+  },
+  "agent_id": "agent_test",
+  "session_id": "sess-voice-001",
+  "workflow": {
+    "name": "sample_livekit_agent",
+    "status": "completed",
+    "started_at": "2026-09-15T08:54:28.396403Z",
+    "ended_at": "2026-09-15T08:54:28.397218Z"
+  },
+  "interactions": [
+    {
+      "interaction_ref": "ix_0",
+      "parent_interaction_ref": null,
+      "interaction_type": "conversational",
+      "name": "turn_1",
+      "input": "What's the weather in NYC?",
+      "output": "It's 72\u00b0F and sunny in NYC.",
+      "events": {
+        "trigger": [],
+        "context": [
+          {
+            "name": "livekit.session_started",
+            "at": "2026-09-15T08:54:28.396244Z"
+          },
+          {
+            "name": "livekit.session_ended",
+            "at": "2026-09-15T08:54:28.397216Z"
+          }
+        ],
+        "spans": [
+          {
+            "type": "stt",
+            "name": "stt",
+            "status": "success",
+            "span_ref": "n_2",
+            "started_at": "2026-09-15T08:54:28.396422Z",
+            "ended_at": "2026-09-15T08:54:28.396430Z",
+            "input": {
+              "text": "[audio_stream]"
+            },
+            "output": {
+              "text": "What's the weather in NYC?"
+            },
+            "properties": {
+              "kind": "stt",
+              "name": "stt",
+              "status": "success",
+              "duration_ms": 0
+            },
+            "duration_ms": 0
+          },
+          {
+            "type": "turn_detection",
+            "name": "turn_detection",
+            "status": "success",
+            "span_ref": "n_3",
+            "started_at": "2026-09-15T08:54:28.396637Z",
+            "ended_at": "2026-09-15T08:54:28.396646Z",
+            "input": {
+              "text": "What's the weather in NYC?"
+            },
+            "output": {
+              "text": "turn_complete"
+            },
+            "properties": {
+              "kind": "turn_detection",
+              "name": "turn_detection",
+              "status": "success",
+              "duration_ms": 0
+            },
+            "duration_ms": 0
+          },
+          {
+            "type": "agent",
+            "name": "support_agent",
+            "status": "success",
+            "span_ref": "n_4",
+            "started_at": "2026-09-15T08:54:28.396776Z",
+            "ended_at": "2026-09-15T08:54:28.396908Z",
+            "input": {
+              "text": "What's the weather in NYC?"
+            },
+            "output": {
+              "text": "It's 72\u00b0F and sunny in NYC."
+            },
+            "properties": {
+              "kind": "agent",
+              "name": "support_agent",
+              "status": "success",
+              "duration_ms": 0
+            },
+            "duration_ms": 0
+          },
+          {
+            "type": "llm",
+            "name": "llm",
+            "status": "success",
+            "span_ref": "n_4_llm",
+            "parent_span_ref": "n_4",
+            "started_at": "2026-09-15T08:54:28.396781Z",
+            "ended_at": "2026-09-15T08:54:28.396904Z",
+            "input": {},
+            "output": {},
+            "properties": {
+              "kind": "llm",
+              "name": "llm",
+              "status": "success"
+            }
+          },
+          {
+            "type": "tool",
+            "name": "lookup_weather",
+            "status": "success",
+            "span_ref": "n_5",
+            "started_at": "2026-09-15T08:54:28.396784Z",
+            "ended_at": "2026-09-15T08:54:28.396789Z",
+            "input": {
+              "text": "{\"city\": \"NYC\"}"
+            },
+            "output": {
+              "text": "{\"temp_f\": 72, \"condition\": \"sunny\"}"
+            },
+            "properties": {
+              "kind": "tool",
+              "name": "lookup_weather",
+              "status": "success",
+              "duration_ms": 0
+            },
+            "duration_ms": 0,
+            "parent_span_ref": "n_4"
+          },
+          {
+            "type": "tts",
+            "name": "tts",
+            "status": "success",
+            "span_ref": "n_6",
+            "started_at": "2026-09-15T08:54:28.397019Z",
+            "ended_at": "2026-09-15T08:54:28.397025Z",
+            "input": {
+              "text": "It's 72\u00b0F and sunny in NYC."
+            },
+            "output": {
+              "text": "[audio_stream]"
+            },
+            "properties": {
+              "kind": "tts",
+              "name": "tts",
+              "status": "success",
+              "duration_ms": 0
+            },
+            "duration_ms": 0
+          }
+        ]
+      },
+      "attributes": [
+        {
+          "name": "success",
+          "value": true
+        },
+        {
+          "name": "latency_ms",
+          "value": 0
+        },
+        {
+          "name": "room",
+          "value": "room-demo"
+        },
+        {
+          "name": "participant",
+          "value": "user-1"
+        },
+        {
+          "name": "session_id",
+          "value": "sess-voice-001"
+        }
+      ],
+      "started_at": "2026-09-15T08:54:28.396415Z",
+      "ended_at": "2026-09-15T08:54:28.397122Z"
+    }
+  ]
+}

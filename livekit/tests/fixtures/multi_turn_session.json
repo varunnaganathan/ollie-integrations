@@ -1,0 +1,258 @@
+{
+  "schema_version": 2,
+  "sdk": {
+    "name": "ollie-integrations-livekit",
+    "version": "0.2.0"
+  },
+  "agent_id": "agent_test",
+  "session_id": "sess-voice-002",
+  "workflow": {
+    "name": "sample_livekit_agent",
+    "status": "completed",
+    "started_at": "2026-09-15T08:54:28.399331Z",
+    "ended_at": "2026-09-15T08:54:28.400403Z"
+  },
+  "interactions": [
+    {
+      "interaction_ref": "ix_0",
+      "parent_interaction_ref": null,
+      "interaction_type": "conversational",
+      "name": "turn_1",
+      "input": "What's the weather in NYC?",
+      "output": "It's 72\u00b0F and sunny in NYC.",
+      "events": {
+        "trigger": [],
+        "context": [
+          {
+            "name": "livekit.session_started",
+            "at": "2026-09-15T08:54:28.399329Z"
+          },
+          {
+            "name": "livekit.session_ended",
+            "at": "2026-09-15T08:54:28.400401Z"
+          }
+        ],
+        "spans": [
+          {
+            "type": "stt",
+            "name": "stt",
+            "status": "success",
+            "span_ref": "n_2",
+            "started_at": "2026-09-15T08:54:28.399339Z",
+            "ended_at": "2026-09-15T08:54:28.399344Z",
+            "input": {
+              "text": "[audio_stream]"
+            },
+            "output": {
+              "text": "What's the weather in NYC?"
+            },
+            "properties": {
+              "kind": "stt",
+              "name": "stt",
+              "status": "success",
+              "duration_ms": 0
+            },
+            "duration_ms": 0
+          },
+          {
+            "type": "turn_detection",
+            "name": "turn_detection",
+            "status": "success",
+            "span_ref": "n_3",
+            "started_at": "2026-09-15T08:54:28.399436Z",
+            "ended_at": "2026-09-15T08:54:28.399440Z",
+            "input": {
+              "text": "What's the weather in NYC?"
+            },
+            "output": {
+              "text": "turn_complete"
+            },
+            "properties": {
+              "kind": "turn_detection",
+              "name": "turn_detection",
+              "status": "success",
+              "duration_ms": 0
+            },
+            "duration_ms": 0
+          },
+          {
+            "type": "agent",
+            "name": "support_agent",
+            "status": "success",
+            "span_ref": "n_4",
+            "started_at": "2026-09-15T08:54:28.399545Z",
+            "ended_at": "2026-09-15T08:54:28.399549Z",
+            "input": {
+              "text": "What's the weather in NYC?"
+            },
+            "output": {
+              "text": "It's 72\u00b0F and sunny in NYC."
+            },
+            "properties": {
+              "kind": "agent",
+              "name": "support_agent",
+              "status": "success",
+              "duration_ms": 0
+            },
+            "duration_ms": 0
+          },
+          {
+            "type": "tts",
+            "name": "tts",
+            "status": "success",
+            "span_ref": "n_5",
+            "started_at": "2026-09-15T08:54:28.399660Z",
+            "ended_at": "2026-09-15T08:54:28.399664Z",
+            "input": {
+              "text": "It's 72\u00b0F and sunny in NYC."
+            },
+            "output": {
+              "text": "[audio_stream]"
+            },
+            "properties": {
+              "kind": "tts",
+              "name": "tts",
+              "status": "success",
+              "duration_ms": 0
+            },
+            "duration_ms": 0
+          }
+        ]
+      },
+      "attributes": [
+        {
+          "name": "success",
+          "value": true
+        },
+        {
+          "name": "latency_ms",
+          "value": 0
+        },
+        {
+          "name": "room",
+          "value": "room-demo"
+        },
+        {
+          "name": "participant",
+          "value": "user-1"
+        },
+        {
+          "name": "session_id",
+          "value": "sess-voice-002"
+        }
+      ],
+      "started_at": "2026-09-15T08:54:28.399335Z",
+      "ended_at": "2026-09-15T08:54:28.399775Z"
+    },
+    {
+      "interaction_ref": "ix_1",
+      "parent_interaction_ref": null,
+      "interaction_type": "conversational",
+      "name": "turn_2",
+      "input": "Thanks!",
+      "output": "You're welcome!",
+      "events": {
+        "trigger": [],
+        "context": [],
+        "spans": [
+          {
+            "type": "stt",
+            "name": "stt",
+            "status": "success",
+            "span_ref": "n_7",
+            "started_at": "2026-09-15T08:54:28.399892Z",
+            "ended_at": "2026-09-15T08:54:28.399896Z",
+            "input": {
+              "text": "[audio_stream]"
+            },
+            "output": {
+              "text": "Thanks!"
+            },
+            "properties": {
+              "kind": "stt",
+              "name": "stt",
+              "status": "success",
+              "duration_ms": 0
+            },
+            "duration_ms": 0
+          },
+          {
+            "type": "turn_detection",
+            "name": "turn_detection",
+            "status": "success",
+            "span_ref": "n_8",
+            "started_at": "2026-09-15T08:54:28.400009Z",
+            "ended_at": "2026-09-15T08:54:28.400014Z",
+            "input": {
+              "text": "Thanks!"
+            },
+            "output": {
+              "text": "turn_complete"
+            },
+            "properties": {
+              "kind": "turn_detection",
+              "name": "turn_detection",
+              "status": "success",
+              "duration_ms": 0
+            },
+            "duration_ms": 0
+          },
+          {
+            "type": "agent",
+            "name": "support_agent",
+            "status": "success",
+            "span_ref": "n_9",
+            "started_at": "2026-09-15T08:54:28.400110Z",
+            "ended_at": "2026-09-15T08:54:28.400114Z",
+            "input": {
+              "text": "Thanks!"
+            },
+            "output": {
+              "text": "You're welcome!"
+            },
+            "properties": {
+              "kind": "agent",
+              "name": "support_agent",
+              "status": "success",
+              "duration_ms": 0
+            },
+            "duration_ms": 0
+          },
+          {
+            "type": "tts",
+            "name": "tts",
+            "status": "success",
+            "span_ref": "n_10",
+            "started_at": "2026-09-15T08:54:28.400208Z",
+            "ended_at": "2026-09-15T08:54:28.400212Z",
+            "input": {
+              "text": "You're welcome!"
+            },
+            "output": {
+              "text": "[audio_stream]"
+            },
+            "properties": {
+              "kind": "tts",
+              "name": "tts",
+              "status": "success",
+              "duration_ms": 0
+            },
+            "duration_ms": 0
+          }
+        ]
+      },
+      "attributes": [
+        {
+          "name": "success",
+          "value": true
+        },
+        {
+          "name": "latency_ms",
+          "value": 0
+        }
+      ],
+      "started_at": "2026-09-15T08:54:28.399888Z",
+      "ended_at": "2026-09-15T08:54:28.400309Z"
+    }
+  ]
+}

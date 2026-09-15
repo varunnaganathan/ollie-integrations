@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ollie-integrations-livekit"
+version = "0.2.0"
+description = "Native LiveKit Agents voice-pipeline integration for Ollie v2 ingest"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "ollie-sdk",
+]
+
+[project.optional-dependencies]
+agent = [
+    "livekit-agents>=1.5.0",
+    "livekit-plugins-openai>=1.0.0",
+    "livekit-plugins-silero>=1.0.0",
+    "livekit-plugins-turn-detector>=1.0.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.23.0",
+    "python-dotenv>=1.0.0",
+    "python-dateutil>=2.8.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ollie_integrations_livekit"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "tests", "examples"]
+asyncio_mode = "auto"
+markers = [
+    "e2e: end-to-end tests with live LiveKit agent",
+    "livekit: requires livekit-agents, OPENAI_API_KEY, and network",
+    "openai: requires OPENAI_API_KEY",
+]
