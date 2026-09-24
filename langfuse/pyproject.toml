@@ -1,0 +1,31 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ollie-integrations-langfuse"
+version = "0.1.0"
+description = "Standalone, privacy-safe Langfuse snapshot importer for Ollie"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [{ name = "Ollie", email = "support@ollie.ai" }]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+ollie-langfuse-import = "ollie_langfuse_import.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/varunnaganathan/ollie-integrations/tree/main/langfuse"
+Repository = "https://github.com/varunnaganathan/ollie-integrations"
+Issues = "https://github.com/varunnaganathan/ollie-integrations/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ollie_langfuse_import"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

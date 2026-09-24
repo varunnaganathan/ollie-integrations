@@ -1,0 +1,22 @@
+{
+  "data": [
+    {
+      "id": "trace-old",
+      "timestamp": "2026-09-01T10:00:00Z",
+      "input": "Email alice@example.com or call +1 415-555-0199",
+      "metadata": {
+        "api_key": "sk-example-secret-value-123456"
+      }
+    },
+    {
+      "id": "trace-new",
+      "timestamp": "2026-09-03T10:00:00Z",
+      "output": "Customer SSN 123-45-6789"
+    },
+    {
+      "id": "trace-old",
+      "timestamp": "2026-09-02T10:00:00Z",
+      "input": "Updated alice@example.com"
+    }
+  ]
+}
