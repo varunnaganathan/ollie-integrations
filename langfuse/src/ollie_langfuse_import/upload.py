@@ -52,6 +52,20 @@ def _chunk(index: int, lines: list[bytes]) -> Chunk:
     )
 
 
+# Chunk PUTs run mandatory server-side Presidio redaction; cold hosts + large
+# batches routinely exceed a 60s client read. urllib.urlopen only accepts a
+# single numeric timeout (unlike requests' (connect, read) tuple).
+_DEFAULT_TIMEOUT = 300.0
+_DEFAULT_CHUNK_RETRIES = 3
+
+
+def _timeout() -> float:
+    raw = os.environ.get("OLLIE_IMPORT_READ_TIMEOUT") or os.environ.get(
+        "OLLIE_IMPORT_TIMEOUT", _DEFAULT_TIMEOUT
+    )
+    return max(30.0, float(raw))
+
+
 class OllieImportClient:
     def __init__(self, api_key: str, base_url: str):
         if not api_key:
@@ -68,6 +82,7 @@ class OllieImportClient:
         *,
         body: bytes | None = None,
         headers: dict[str, str] | None = None,
+        retries: int = 0,
     ) -> dict[str, Any]:
         request_headers = {
             "X-API-Key": self.api_key,
@@ -81,13 +96,42 @@ class OllieImportClient:
             method=method,
             headers=request_headers,
         )
-        try:
-            with urllib.request.urlopen(request, timeout=60) as response:
-                data = response.read()
-        except urllib.error.HTTPError as exc:
-            raise UploadError(f"Ollie import API returned HTTP {exc.code}") from exc
-        except urllib.error.URLError as exc:
-            raise UploadError("could not reach the Ollie import API") from exc
+        attempts = max(1, retries + 1)
+        last_exc: BaseException | None = None
+        data = b""
+        for attempt in range(attempts):
+            try:
+                with urllib.request.urlopen(request, timeout=_timeout()) as response:
+                    data = response.read()
+                break
+            except urllib.error.HTTPError as exc:
+                raise UploadError(f"Ollie import API returned HTTP {exc.code}") from exc
+            except TimeoutError as exc:
+                last_exc = exc
+                if attempt + 1 >= attempts:
+                    raise UploadError(
+                        "Ollie import API timed out while reading the response "
+                        f"(method={method} path={path}). Try smaller --chunk-records "
+                        "or raise OLLIE_IMPORT_TIMEOUT."
+                    ) from exc
+                time.sleep(min(8.0, 1.5 * (attempt + 1)))
+            except urllib.error.URLError as exc:
+                reason = getattr(exc, "reason", None)
+                if isinstance(reason, TimeoutError) or (
+                    reason is not None and "timed out" in str(reason).lower()
+                ):
+                    last_exc = exc
+                    if attempt + 1 >= attempts:
+                        raise UploadError(
+                            "Ollie import API timed out "
+                            f"(method={method} path={path}). Try smaller "
+                            "--chunk-records or raise OLLIE_IMPORT_TIMEOUT."
+                        ) from exc
+                    time.sleep(min(8.0, 1.5 * (attempt + 1)))
+                    continue
+                raise UploadError("could not reach the Ollie import API") from exc
+        else:
+            raise UploadError("could not reach the Ollie import API") from last_exc
         if not data:
             return {}
         try:
@@ -109,6 +153,7 @@ class OllieImportClient:
                 "Content-Type": "application/json",
                 "Idempotency-Key": idempotency_key,
             },
+            retries=2,
         )
 
     @staticmethod
@@ -154,9 +199,17 @@ class OllieImportClient:
 
         status = self._request("GET", f"/v1/imports/{import_id}")
         uploaded = self._uploaded_indices(status)
+        chunk_retries = int(
+            os.environ.get("OLLIE_IMPORT_CHUNK_RETRIES", _DEFAULT_CHUNK_RETRIES)
+        )
         for chunk in chunks:
             if chunk.index in uploaded:
                 continue
+            print(
+                f"uploading chunk {chunk.index + 1}/{len(chunks)} "
+                f"({chunk.records} records, {len(chunk.body)} bytes gzip)…",
+                flush=True,
+            )
             self._request(
                 "PUT",
                 f"/v1/imports/{import_id}/chunks/{chunk.index}",
@@ -168,6 +221,7 @@ class OllieImportClient:
                     "X-Checksum-SHA256": chunk.checksum,
                     "Idempotency-Key": f"{import_key}-chunk-{chunk.index}",
                 },
+                retries=max(0, chunk_retries),
             )
         return self._json(
             "POST",

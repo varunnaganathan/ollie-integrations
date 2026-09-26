@@ -40,8 +40,11 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument(
         "--chunk-records",
         type=int,
-        default=100,
-        help="records per gzip NDJSON chunk (default: 100)",
+        default=25,
+        help=(
+            "records per gzip NDJSON chunk (default: 25; keep small so each "
+            "server-side redaction finishes before the HTTP timeout)"
+        ),
     )
     result.add_argument(
         "--no-wait",
