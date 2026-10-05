@@ -97,6 +97,48 @@ class _Response:
         return self.body
 
 
+def test_langfuse_get_waits_for_retry_after(monkeypatch):
+    import io
+    import urllib.error
+    from email.message import EmailMessage
+
+    from ollie_langfuse_import.langfuse_api import _Client
+
+    waits: list[float] = []
+    calls = {"n": 0}
+
+    def urlopen(request, timeout):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            body = b'{"message":"Rate limit exceeded","details":{"retryAfterSeconds":24}}'
+            raise urllib.error.HTTPError(
+                request.full_url,
+                429,
+                "Too Many Requests",
+                EmailMessage(),
+                io.BytesIO(body),
+            )
+        return _Response({"data": []})
+
+    monkeypatch.setattr("urllib.request.urlopen", urlopen)
+    monkeypatch.setattr(
+        "ollie_langfuse_import.langfuse_api.time.sleep",
+        lambda seconds: waits.append(seconds),
+    )
+    payload = _Client("pk", "sk", "https://cloud.langfuse.com").get(
+        "/api/public/v2/observations"
+    )
+    assert payload == {"data": []}
+    assert calls["n"] == 2
+    assert waits == [24.5]
+
+
+def test_v2_observation_page_uses_api_maximum():
+    from ollie_langfuse_import.langfuse_api import _V2_PAGE_SIZE
+
+    assert _V2_PAGE_SIZE == 1000
+
+
 def test_upload_resumes_chunks_and_sends_checksums(monkeypatch):
     requests = []
 

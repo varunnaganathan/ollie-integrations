@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import json
+import sys
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -15,10 +16,34 @@ from typing import Any
 
 MAX_OBSERVATIONS_PER_TRACE = 5_000
 MAX_FIELD_CHARS = 100_000
+_MAX_RATE_LIMIT_WAITS = 30
+# Observations API v2 allows 1000 rows per request. The Cloud general bucket
+# is 30 requests per minute, so a smaller page spends that budget early.
+_V2_PAGE_SIZE = 1000
 
 
 class LangfuseError(RuntimeError):
     pass
+
+
+def _retry_after_seconds(exc: urllib.error.HTTPError, detail: str) -> float:
+    header = exc.headers.get("Retry-After") if exc.headers is not None else None
+    if header:
+        try:
+            return max(0.0, float(header))
+        except ValueError:
+            pass
+    try:
+        payload = json.loads(detail)
+    except json.JSONDecodeError:
+        payload = None
+    details = payload.get("details") if isinstance(payload, dict) else None
+    if isinstance(details, dict) and details.get("retryAfterSeconds") is not None:
+        try:
+            return max(0.0, float(details["retryAfterSeconds"]))
+        except (TypeError, ValueError):
+            pass
+    return 0.0
 
 
 class _Client:
@@ -35,7 +60,9 @@ class _Client:
                 "User-Agent": "ollie-langfuse-import/0.1",
             },
         )
-        for attempt in range(attempts):
+        attempt = 0
+        rate_limits = 0
+        while attempt < attempts:
             try:
                 with urllib.request.urlopen(request, timeout=60) as response:
                     payload = json.load(response)
@@ -47,13 +74,26 @@ class _Client:
                 # New orgs (2026-09-16+) reject legacy list APIs with 410.
                 if exc.code == 410:
                     raise LangfuseError(f"LEGACY_API_UNAVAILABLE:{detail[:500]}") from exc
-                if attempt + 1 >= attempts or exc.code in {401, 403, 404}:
+                if exc.code == 429 and rate_limits < _MAX_RATE_LIMIT_WAITS:
+                    rate_limits += 1
+                    wait = _retry_after_seconds(exc, detail)
+                    if wait <= 0:
+                        wait = min(60.0, float(2**rate_limits))
+                    print(
+                        f"Langfuse rate limit, waiting {wait:.0f}s",
+                        file=sys.stderr,
+                    )
+                    time.sleep(wait + 0.5)
+                    continue
+                attempt += 1
+                if attempt >= attempts or exc.code in {401, 403, 404, 429}:
                     raise LangfuseError(
                         f"Langfuse request failed HTTP {exc.code}: {detail[:500]}"
                     ) from exc
                 time.sleep(0.25 * (2**attempt))
             except (urllib.error.URLError, json.JSONDecodeError) as exc:
-                if attempt + 1 >= attempts:
+                attempt += 1
+                if attempt >= attempts:
                     raise LangfuseError("Langfuse trace retrieval failed") from exc
                 time.sleep(0.25 * (2**attempt))
         raise LangfuseError("Langfuse trace retrieval failed")
@@ -180,7 +220,7 @@ def _fetch_traces_v2(client: _Client, limit: int) -> list[dict[str, Any]]:
         params: dict[str, str] = {
             "fromStartTime": start.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "toStartTime": end.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "limit": "100",
+            "limit": str(_V2_PAGE_SIZE),
         }
         if cursor:
             params["cursor"] = cursor
