@@ -208,6 +208,48 @@ def _attr_map(observation: dict[str, Any]) -> dict[str, Any]:
     return {}
 
 
+def _text_value(value: Any) -> str:
+    if isinstance(value, str) and value.strip() and value.strip() not in {"null", "{}", "[]"}:
+        return value
+    return ""
+
+
+def _trace_field(observations: list[dict[str, Any]], field: str) -> str:
+    """Prompt and response live on the root span once io is requested.
+
+    An earlier empty wrapper span must not hide that text.
+    """
+    parentless = [obs for obs in observations if not (obs.get("parentObservationId") or "")]
+    children = [obs for obs in observations if obs not in parentless]
+    if field == "output":
+        ordered = parentless + list(reversed(children))
+    else:
+        ordered = parentless + children
+    keys = (
+        f"attributes.langfuse.trace.{field}",
+        f"langfuse.trace.{field}",
+        f"attributes.langfuse.observation.{field}",
+        f"langfuse.observation.{field}",
+    )
+    for obs in ordered:
+        text = _text_value(obs.get(field))
+        if text:
+            return text
+        meta = _attr_map(obs)
+        for key in keys:
+            text = _text_value(meta.get(key))
+            if text:
+                return text
+    return ""
+
+
+def _envelope(observations: list[dict[str, Any]]) -> dict[str, Any]:
+    parentless = [obs for obs in observations if not (obs.get("parentObservationId") or "")]
+    with_text = [obs for obs in parentless if _text_value(obs.get("input")) or _text_value(obs.get("output"))]
+    pool = with_text or parentless or observations
+    return pool[0] if pool else {}
+
+
 def _fetch_traces_v2(client: _Client, limit: int) -> list[dict[str, Any]]:
     """Rebuild traces from GET /api/public/v2/observations for new Langfuse orgs."""
     end = datetime.now(timezone.utc) + timedelta(hours=1)
@@ -221,6 +263,8 @@ def _fetch_traces_v2(client: _Client, limit: int) -> list[dict[str, Any]]:
             "fromStartTime": start.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "toStartTime": end.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "limit": str(_V2_PAGE_SIZE),
+            # The v2 list omits prompt and response unless io is requested.
+            "fields": "core,basic,time,metadata,io,model,usage,prompt,metrics",
         }
         if cursor:
             params["cursor"] = cursor
@@ -258,14 +302,7 @@ def _fetch_traces_v2(client: _Client, limit: int) -> list[dict[str, Any]]:
             key=lambda obs: str(obs.get("startTime") or ""),
         )[:MAX_OBSERVATIONS_PER_TRACE]
         root = observations[0] if observations else {}
-        candidates = sorted(
-            observations,
-            key=lambda obs: (
-                1 if obs.get("parentObservationId") else 0,
-                str(obs.get("startTime") or ""),
-            ),
-        )
-        envelope = candidates[0] if candidates else root
+        envelope = _envelope(observations) or root
         env_meta = _attr_map(envelope)
         timestamp = envelope.get("startTime") or root.get("startTime")
         trace = {
@@ -275,8 +312,8 @@ def _fetch_traces_v2(client: _Client, limit: int) -> list[dict[str, Any]]:
             "name": envelope.get("name") or "imported-trace",
             "sessionId": env_meta.get("session.id") or env_meta.get("sessionId"),
             "userId": env_meta.get("user.id") or env_meta.get("userId"),
-            "input": env_meta.get("langfuse.trace.input") or envelope.get("input"),
-            "output": env_meta.get("langfuse.trace.output") or envelope.get("output"),
+            "input": _trace_field(observations, "input"),
+            "output": _trace_field(observations, "output"),
             "metadata": {
                 "import_source": "langfuse_v2_observations",
                 **{k: v for k, v in env_meta.items() if str(k).startswith("ollie.")},

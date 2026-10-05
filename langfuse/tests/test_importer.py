@@ -133,6 +133,43 @@ def test_langfuse_get_waits_for_retry_after(monkeypatch):
     assert waits == [24.5]
 
 
+def test_trace_field_uses_the_span_that_has_the_prompt():
+    from ollie_langfuse_import.langfuse_api import _trace_field
+
+    observations = [
+        {"input": None, "output": None, "startTime": "2026-01-01T00:00:00Z"},
+        {
+            "parentObservationId": "root",
+            "input": "child prompt",
+            "output": "child reply",
+            "startTime": "2026-01-01T00:00:01Z",
+        },
+        {
+            "input": "the user prompt",
+            "output": "the agent reply",
+            "startTime": "2026-01-01T00:00:02Z",
+        },
+    ]
+    assert _trace_field(observations, "input") == "the user prompt"
+    assert _trace_field(observations, "output") == "the agent reply"
+
+
+def test_v2_observations_request_includes_prompt_and_response():
+    from ollie_langfuse_import.langfuse_api import _fetch_traces_v2
+
+    seen: list[str] = []
+
+    class _Client:
+        def get(self, path: str) -> dict:
+            seen.append(path)
+            return {"data": []}
+
+    assert _fetch_traces_v2(_Client(), 1) == []
+    assert seen
+    fields = seen[0].split("fields=", 1)[1].split("&", 1)[0]
+    assert "io" in fields.split("%2C") or "io" in fields.split(",")
+
+
 def test_v2_observation_page_uses_api_maximum():
     from ollie_langfuse_import.langfuse_api import _V2_PAGE_SIZE
 

@@ -79,8 +79,11 @@ def run(argv: Sequence[str] | None = None) -> dict:
         raise InputError("snapshot contains no accepted object records")
 
     fingerprint = hashlib.sha256(canonical_json(selected)).digest()
-    redactor = Redactor(fingerprint)
-    redacted = [redactor.value(record) for record in selected]
+    if os.environ.get("OLLIE_IMPORT_PII", "1").strip().lower() in {"0", "false", "no", "off"}:
+        redacted = selected
+    else:
+        redactor = Redactor(fingerprint)
+        redacted = [redactor.value(record) for record in selected]
     chunks = make_chunks(redacted, args.chunk_records)
 
     client = OllieImportClient(
