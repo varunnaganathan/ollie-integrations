@@ -78,6 +78,25 @@ def test_cli_redacts_before_upload(monkeypatch, tmp_path):
     assert b"OLLIE_REDACTED_EMAIL" in uploaded
 
 
+def test_unset_ollie_base_url_uses_cloud(monkeypatch, tmp_path):
+    snapshot = tmp_path / "snapshot.json"
+    snapshot.write_text(json.dumps([{"id": "trace-1", "timestamp": "2026-09-01T00:00:00Z"}]))
+    seen = {}
+
+    class FakeClient:
+        def __init__(self, api_key, base_url):
+            seen["base_url"] = base_url
+
+        def upload(self, chunks, record_count):
+            return {"id": "import-1", "status": "complete"}
+
+    monkeypatch.setenv("OLLIE_API_KEY", "ollie-key")
+    monkeypatch.delenv("OLLIE_BASE_URL", raising=False)
+    monkeypatch.setattr(cli, "OllieImportClient", FakeClient)
+    assert cli.run([str(snapshot)])["status"] == "complete"
+    assert seen["base_url"] == "https://olliemainapi.onrender.com"
+
+
 def test_main_does_not_echo_credentials(monkeypatch, capsys):
     monkeypatch.setenv("OLLIE_API_KEY", "do-not-print")
     monkeypatch.delenv("OLLIE_BASE_URL", raising=False)

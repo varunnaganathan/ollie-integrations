@@ -10,8 +10,8 @@ One guide for **Python** and **TypeScript**. Install the language pin you need; 
 | `OLLIE_AGENT_ID` | Yes | Agent id from Ollie |
 | `OLLIE_SESSION_ID` | Onboarding | Ollie trace/session id (`test-offline-<8hex>`, ≤36 chars). **Not** a `Runner.run` kwarg. |
 | `OPENAI_API_KEY` | Yes (for live runs) | Stays on your machine — not sent to Ollie |
-| `OLLIE_BASE_URL` | Prod | Analysis / registry |
-| `OLLIE_INGEST_BASE_URL` | Prod | Event ingest |
+| `OLLIE_BASE_URL` | No | Defaults to Ollie Cloud analysis |
+| `OLLIE_INGEST_BASE_URL` | No | Defaults to Ollie Cloud ingest |
 
 ## Version capabilities
 

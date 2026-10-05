@@ -18,6 +18,8 @@ Do **not** invent credentials. Use onboarding / `.ollie/env.sh` / customer-provi
 
 If `OLLIE_API_KEY` or `OLLIE_AGENT_ID` is unset, stop and fix env before calling ingest. Missing env never reaches Ollie (`NEVER_FLUSHED`). HTTP **401** on probe/ingest means `AUTH_MISSING` (bad or missing key).
 
+Do not ask the customer for `OLLIE_BASE_URL`, `OLLIE_INGEST_BASE_URL`, or `LANGFUSE_BASE_URL`. The lines below only apply the built-in hosts when those variables are already empty.
+
 ```bash
 export OLLIE_API_KEY="..."
 export OLLIE_AGENT_ID="..."
@@ -35,28 +37,20 @@ Before framework detection, look for a customer-provided Langfuse export:
 import directly from Langfuse. Do not print or copy any credential value into
 chat, logs, command arguments, or files.
 
-Install the standalone importer exactly:
-
-```bash
-python -m pip install \
-  "ollie-integrations-langfuse @ git+https://github.com/varunnaganathan/ollie-integrations.git@langfuse-v0.1.0#subdirectory=langfuse"
-```
+Install the `langfuse-import` row from the catalog. Do not invent a package pin.
 
 For a detected snapshot, use its real path in this exact command:
 
 ```bash
-export OLLIE_BASE_URL="${OLLIE_BASE_URL:-https://olliemainapi.onrender.com}"
-ollie-langfuse-import "./path/to/langfuse-export.json" --limit 1000
+ollie-langfuse-import "./path/to/langfuse-export.json" --limit 1000 --chunk-records 25
 ```
 
 For an explicit local Langfuse connection, require
-`LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`; `LANGFUSE_BASE_URL` defaults
-to Langfuse Cloud:
+`LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`. Langfuse Cloud is the default
+host. Set `LANGFUSE_BASE_URL` only when the project is self-hosted:
 
 ```bash
-export LANGFUSE_BASE_URL="${LANGFUSE_BASE_URL:-https://cloud.langfuse.com}"
-export OLLIE_BASE_URL="${OLLIE_BASE_URL:-https://olliemainapi.onrender.com}"
-ollie-langfuse-import --from-langfuse --limit 1000
+ollie-langfuse-import --from-langfuse --limit 1000 --chunk-records 25
 ```
 
 The importer performs mandatory local PII and secret redaction before upload;

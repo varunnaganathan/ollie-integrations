@@ -7,11 +7,12 @@ traces and creates draft results; it does not activate production monitors.
 ## Install
 
 ```bash
-python -m pip install "ollie-integrations-langfuse @ git+https://github.com/varunnaganathan/ollie-integrations.git@langfuse-v0.1.0#subdirectory=langfuse"
+python -m pip install "ollie-integrations-langfuse @ git+https://github.com/varunnaganathan/ollie-integrations.git@langfuse-v0.1.4#subdirectory=langfuse"
 ```
 
-Set `OLLIE_API_KEY` and `OLLIE_BASE_URL`. Set `OLLIE_DASHBOARD_URL` if you want
-the command to print an absolute dashboard URL.
+Set `OLLIE_API_KEY`. Ollie Cloud is the default host, so do not set
+`OLLIE_BASE_URL`. Set `OLLIE_DASHBOARD_URL` if you want the command to print
+an absolute dashboard URL.
 
 ## Analyze a dump
 
@@ -23,8 +24,9 @@ JSON, JSONL, and NDJSON dumps are supported.
 
 ## Export locally from Langfuse and analyze
 
-Set `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, and optionally
-`LANGFUSE_BASE_URL`, then run:
+Set `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`. Langfuse Cloud is the
+default host, so do not set `LANGFUSE_BASE_URL` unless the project is
+self-hosted. Then run:
 
 ```bash
 ollie-langfuse-import --from-langfuse

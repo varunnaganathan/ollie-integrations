@@ -11,14 +11,14 @@ Python 3.10 or newer is required.
 
 ```bash
 python -m pip install \
-  "ollie-integrations-langfuse @ git+https://github.com/varunnaganathan/ollie-integrations.git@langfuse-v0.1.0#subdirectory=langfuse"
+  "ollie-integrations-langfuse @ git+https://github.com/varunnaganathan/ollie-integrations.git@langfuse-v0.1.4#subdirectory=langfuse"
 ```
 
-Set Ollie credentials in the shell running the importer:
+Set the Ollie API key in the shell running the importer. The importer talks to
+Ollie Cloud unless `OLLIE_BASE_URL` is already set.
 
 ```bash
 export OLLIE_API_KEY="..."
-export OLLIE_BASE_URL="https://olliemainapi.onrender.com"
 ```
 
 Credentials are read from environment variables and are never included in
@@ -46,12 +46,12 @@ credentials are not sent to Ollie.
 ```bash
 export LANGFUSE_PUBLIC_KEY="pk-lf-..."
 export LANGFUSE_SECRET_KEY="sk-lf-..."
-export LANGFUSE_BASE_URL="https://cloud.langfuse.com"
 
 ollie-langfuse-import --from-langfuse --limit 1000
 ```
 
-`LANGFUSE_BASE_URL` defaults to `https://cloud.langfuse.com`.
+`LANGFUSE_BASE_URL` defaults to `https://cloud.langfuse.com`. Set it only for a
+self-hosted Langfuse.
 
 ## Privacy and resumability
 

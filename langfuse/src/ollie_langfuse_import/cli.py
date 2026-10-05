@@ -14,6 +14,9 @@ from .records import MAX_RECORDS, InputError, canonical_json, load_dump, select_
 from .redact import Redactor
 from .upload import OllieImportClient, UploadError, make_chunks
 
+DEFAULT_OLLIE_BASE_URL = "https://olliemainapi.onrender.com"
+DEFAULT_LANGFUSE_BASE_URL = "https://cloud.langfuse.com"
+
 
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(
@@ -65,7 +68,7 @@ def run(argv: Sequence[str] | None = None) -> dict:
         records = fetch_traces(
             os.environ.get("LANGFUSE_PUBLIC_KEY", ""),
             os.environ.get("LANGFUSE_SECRET_KEY", ""),
-            os.environ.get("LANGFUSE_BASE_URL", "https://cloud.langfuse.com"),
+            os.environ.get("LANGFUSE_BASE_URL") or DEFAULT_LANGFUSE_BASE_URL,
             MAX_RECORDS,
         )
     else:
@@ -82,7 +85,7 @@ def run(argv: Sequence[str] | None = None) -> dict:
 
     client = OllieImportClient(
         os.environ.get("OLLIE_API_KEY", ""),
-        os.environ.get("OLLIE_BASE_URL", ""),
+        os.environ.get("OLLIE_BASE_URL") or DEFAULT_OLLIE_BASE_URL,
     )
     result = client.upload(chunks, len(redacted))
     import_id = result.get("id", result.get("import_id"))
@@ -101,7 +104,7 @@ def run(argv: Sequence[str] | None = None) -> dict:
         )
         result.setdefault(
             "report_url",
-            f"{os.environ.get('OLLIE_BASE_URL', '').rstrip('/')}/v1/imports/{import_id}/report",
+            f"{(os.environ.get('OLLIE_BASE_URL') or DEFAULT_OLLIE_BASE_URL).rstrip('/')}/v1/imports/{import_id}/report",
         )
     return result
 
